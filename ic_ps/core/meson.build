@@ -4,7 +4,7 @@ python_sources = [
   'eff_area.py',
   'flux.py',
   'hdf5_utils.py',
-  'likelihood_pl.py',
+  'likelihood.py',
   'pdf.py',
   'smear_mat.py',
 ]
