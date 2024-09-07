@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-import pdf
+import ic_ps.core.pdf as pdf
 
 #Class that contains smear matrix probabilities as a pandas DataFrame
 class smear_matrix:

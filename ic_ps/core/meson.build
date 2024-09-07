@@ -1,5 +1,4 @@
 python_sources = [
-  'bkg_flux.py',
   'convolve.py',
   'dataset.py',
   'eff_area.py',

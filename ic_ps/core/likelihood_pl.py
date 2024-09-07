@@ -13,12 +13,11 @@ from functools import partial
 import math
 import cmath
 
-import pdf
-import convolve
-import eff_area
-import smear_mat
-import dataset
-
+import ic_ps.core.pdf as pdf
+import ic_ps.core.convolve as convolve
+import ic_ps.core.eff_area as eff_area
+import ic_ps.core.smear_mat as smear_mat
+import ic_ps.core.dataset as dataset
 
 class Likelihood:
 
@@ -41,35 +40,30 @@ class Likelihood:
         self.N = self.dataset.N
         self.N_tot = self.dataset.N_tot
         self.deltaN = self.N_tot-self.N
-        #print("Total number of events = "+str(self.N))
 
         self.log10E_min = np.min(self.dataset.events_log10Ereco)
         self.log10E_max = np.max(self.dataset.events_log10Ereco)
 
-#
-#        Use this when utilising a new background pdf for the first time 
-#
-#        with open(directory+"/bkg_pdf_2d_kde.pkl", "rb") as bkg_file:
-#            self.bkg_pdf = pickle.load(bkg_file)
-#
-#        #Evaluate bkg pdf for events once and store
-#
-#        print("Evaluating background pd values")
-#        self.bkg_pdf_vals = self.bkg_pdf([self.dataset.events_log10Ereco,np.sin(np.radians(self.dataset.events_dec))])/(2*np.pi)
-#        #Add small tolerance to avoid dividing by zero
-#        self.bkg_pdf_vals = np.where(self.bkg_pdf_vals<1e-20, 1e-20, self.bkg_pdf_vals)
-#        
-#        with open('bkg_pd_vals.pkl', 'wb') as file:
-#            pickle.dump(self.bkg_pdf_vals, file)
-#
-#
+        #If pre-calculated background pd values don't exist, calculate them
+        if(!os.path.isfile(directory+'/bkg_pd_vals.pkl')):
+
+            with open(directory+"/bkg_pdf_2d_kde.pkl", "rb") as bkg_file:
+                bkg_pdf = pickle.load(bkg_file)
+
+            #Evaluate bkg pdf for events once and store
+            print("Evaluating background pd values")
+            self.bkg_pdf_vals = self.bkg_pdf([self.dataset.events_log10Ereco,np.sin(np.radians(self.dataset.events_dec))])/(2*np.pi)
+            #Add small tolerance to avoid dividing by zero
+            self.bkg_pdf_vals = np.where(self.bkg_pdf_vals<1e-20, 1e-20, self.bkg_pdf_vals)
+
+            with open('bkg_pd_vals.pkl', 'wb') as file:
+                pickle.dump(self.bkg_pdf_vals, file)
 
         #Load pre-calculated background pd values from pickle file
         with open(directory+'/bkg_pd_vals.pkl', 'rb') as file:
             self.bkg_pdf_vals = pickle.load(file)
 
         #source pdfs 
-        #print("Evaluating smearing pdfs")
         self.energy_pdf = self.smear.get_energy_pdf(src_dec) 
         self.source_psi_pdf = pdf.RayleighPDF()
         #print("Evaluating source energy pdf")
