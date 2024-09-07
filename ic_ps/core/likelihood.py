@@ -45,7 +45,7 @@ class Likelihood:
         self.log10E_max = np.max(self.dataset.events_log10Ereco)
 
         #If pre-calculated background pd values don't exist, calculate them
-        if(!os.path.isfile(directory+'/bkg_pd_vals.pkl')):
+        if(os.path.isfile(directory+'/bkg_pd_vals.pkl') == false):
 
             with open(directory+"/bkg_pdf_2d_kde.pkl", "rb") as bkg_file:
                 bkg_pdf = pickle.load(bkg_file)
