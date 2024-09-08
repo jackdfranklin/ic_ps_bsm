@@ -71,5 +71,7 @@ env.bak/
 venv.bak/
 
 # Input files
-
 datasets/
+
+# Profiling files
+.prof
