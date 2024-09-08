@@ -1,4 +1,5 @@
 python_sources = [
+  '__init__.py',
   'convolve.py',
   'dataset.py',
   'eff_area.py',

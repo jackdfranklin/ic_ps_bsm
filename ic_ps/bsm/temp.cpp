@@ -224,7 +224,7 @@ Eigen::VectorXd solve_iteration(const Eigen::MatrixXd &left_operator, const Eige
 	return left_operator.triangularView<Eigen::Upper>().solve(right_side);
 }
 
-void fix_values(const Eigen::VectorXd &deltaE_GeV, Eigen::VectorXd &current_function, double epsilon=1e-30){
+void fix_values(const Eigen::VectorXd &deltaE_GeV, Eigen::VectorXd &current_function, double epsilon){
 
 	for(size_t index = 0; index < current_function.size(); index++){
 		if(current_function(index)*deltaE_GeV(index) < epsilon or current_function(index) < 0.0){

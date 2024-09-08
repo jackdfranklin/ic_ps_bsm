@@ -75,3 +75,13 @@ datasets/
 
 # Profiling files
 .prof
+
+# Output files
+.npy
+.h5
+.png
+.jpg
+.pdf
+.svg
+.csv
+.txt

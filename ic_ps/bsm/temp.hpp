@@ -2,6 +2,10 @@
 #define TEMP_H_
 #endif // TEMP_H_
 
+#include <array>
+
+#include <Eigen/Dense>
+
 enum flavour {e, mu, tau};
 enum mass_state {one, two, three};
 
