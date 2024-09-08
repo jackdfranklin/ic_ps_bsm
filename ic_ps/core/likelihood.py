@@ -45,23 +45,23 @@ class Likelihood:
         self.log10E_max = np.max(self.dataset.events_log10Ereco)
 
         #If pre-calculated background pd values don't exist, calculate them
-        if(os.path.isfile(directory+'/bkg_pd_vals.pkl') == false):
+        if(os.path.isfile(directory+'/bkg_pd_vals.pkl')):
+        #Load pre-calculated background pd values from pickle file
+            with open(directory+'/bkg_pd_vals.pkl', 'rb') as file:
+                self.bkg_pdf_vals = pickle.load(file)
+        else:
 
             with open(directory+"/bkg_pdf_2d_kde.pkl", "rb") as bkg_file:
                 bkg_pdf = pickle.load(bkg_file)
 
-            #Evaluate bkg pdf for events once and store
-            print("Evaluating background pd values")
-            self.bkg_pdf_vals = self.bkg_pdf([self.dataset.events_log10Ereco,np.sin(np.radians(self.dataset.events_dec))])/(2*np.pi)
-            #Add small tolerance to avoid dividing by zero
-            self.bkg_pdf_vals = np.where(self.bkg_pdf_vals<1e-20, 1e-20, self.bkg_pdf_vals)
+                #Evaluate bkg pdf for events once and store
+                print("Evaluating background pd values")
+                self.bkg_pdf_vals = bkg_pdf([self.dataset.events_log10Ereco,np.sin(np.radians(self.dataset.events_dec))])/(2*np.pi)
+                #Add small tolerance to avoid dividing by zero
+                self.bkg_pdf_vals = np.where(self.bkg_pdf_vals<1e-20, 1e-20, self.bkg_pdf_vals)
 
-            with open('bkg_pd_vals.pkl', 'wb') as file:
-                pickle.dump(self.bkg_pdf_vals, file)
-
-        #Load pre-calculated background pd values from pickle file
-        with open(directory+'/bkg_pd_vals.pkl', 'rb') as file:
-            self.bkg_pdf_vals = pickle.load(file)
+                with open(directory+'bkg_pd_vals.pkl', 'wb') as file:
+                    pickle.dump(self.bkg_pdf_vals, file)
 
         #source pdfs 
         self.energy_pdf = self.smear.get_energy_pdf(src_dec) 
