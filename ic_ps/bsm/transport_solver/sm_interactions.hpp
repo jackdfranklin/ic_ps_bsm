@@ -9,11 +9,6 @@
 
 namespace SM{
 
-    double K(const mass_state i, 
-             const double E_plus, 
-             const double E_minus, 
-             const std::array<double,3> &mass);
-
     Eigen::VectorXd K(const mass_state i, 
                       const Eigen::VectorXd E_GeV, 
                       const std::array<double,3> &neutrino_masses_GeV);

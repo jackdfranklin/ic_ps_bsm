@@ -9,14 +9,10 @@
 
 namespace SI{
 
-    double K(const mass_state i, 
-             const double E_plus, 
-             const double E_minus, 
-             const std::array<double,3> &mass);
-
     Eigen::VectorXd K(const mass_state i, 
                       const Eigen::VectorXd E_GeV, 
-                      const std::array<double,3> &neutrino_masses_GeV);
+                      const std::array<double,3> &neutrino_masses_GeV,
+                      const double g, const double m_phi, bool majorana); 
 
     double A(mass_state j, mass_state k, mass_state i, mass_state l);
 

@@ -1,3 +1,4 @@
+#include <functional>
 #include <cmath>
 #include <complex>
 #include <iostream>
@@ -11,13 +12,18 @@
 #include "utils.hpp"
 #include "constants.hpp"
 #include "sm_interactions.hpp"
+#include "secret_interactions.hpp"
+
+typedef std::function<Eigen::VectorXd(mass_state, Eigen::VectorXd, std::array<double, 3>)> Loss_term; 
+
+typedef std::function<Eigen::MatrixXd(mass_state, mass_state, Eigen::VectorXd, std::array<double, 3>)> Gain_term ;
 
 Eigen::VectorXd transport_flux(Eigen::VectorXd energy_nodes, 
-                               double gamma, 
-                               double distance_Mpc, 
+                               double gamma, double distance_Mpc, 
                                std::array<double,3> neutrino_masses_GeV, 
                                double relic_density_cm, 
-                               int steps){
+                               const Loss_term &K, const Gain_term &I, 
+                               int steps) {
 	
 	size_t N_nodes = energy_nodes.size();
 	double distance_cm = 3.086e+24 * distance_Mpc;
@@ -27,30 +33,30 @@ Eigen::VectorXd transport_flux(Eigen::VectorXd energy_nodes,
 
 	Eigen::MatrixXd identity = Eigen::MatrixXd::Identity(N_nodes, N_nodes);
 
-	const Eigen::MatrixXd I_11 =  SM::I(one, one, energy_nodes, 
+	const Eigen::MatrixXd I_11 =  I(one, one, energy_nodes, 
                                         neutrino_masses_GeV);
-	const Eigen::MatrixXd I_21 =  SM::I( two, one, energy_nodes, 
+	const Eigen::MatrixXd I_21 =  I( two, one, energy_nodes, 
                                         neutrino_masses_GeV);
-	const Eigen::MatrixXd I_31 =  SM::I(three, one, energy_nodes, 
-                                        neutrino_masses_GeV);
-
-	const Eigen::MatrixXd I_12 =  SM::I(one, two, energy_nodes, 
-                                        neutrino_masses_GeV);
-	const Eigen::MatrixXd I_22 =  SM::I(two, two, energy_nodes, 
-                                        neutrino_masses_GeV);
-	const Eigen::MatrixXd I_32 =  SM::I(three, two, energy_nodes, 
+	const Eigen::MatrixXd I_31 =  I(three, one, energy_nodes, 
                                         neutrino_masses_GeV);
 
-	const Eigen::MatrixXd I_13 =  SM::I(one, three, energy_nodes, 
+	const Eigen::MatrixXd I_12 =  I(one, two, energy_nodes, 
                                         neutrino_masses_GeV);
-	const Eigen::MatrixXd I_23 =  SM::I(two, three, energy_nodes, 
+	const Eigen::MatrixXd I_22 =  I(two, two, energy_nodes, 
                                         neutrino_masses_GeV);
-	const Eigen::MatrixXd I_33 =  SM::I(three, three, energy_nodes, 
+	const Eigen::MatrixXd I_32 =  I(three, two, energy_nodes, 
                                         neutrino_masses_GeV);
 
-	const Eigen::VectorXd K_1 = SM::K(one,   energy_nodes, neutrino_masses_GeV);
-	const Eigen::VectorXd K_2 = SM::K(two,   energy_nodes, neutrino_masses_GeV);
-	const Eigen::VectorXd K_3 = SM::K(three, energy_nodes, neutrino_masses_GeV);
+	const Eigen::MatrixXd I_13 =  I(one, three, energy_nodes, 
+                                        neutrino_masses_GeV);
+	const Eigen::MatrixXd I_23 =  I(two, three, energy_nodes, 
+                                        neutrino_masses_GeV);
+	const Eigen::MatrixXd I_33 =  I(three, three, energy_nodes, 
+                                        neutrino_masses_GeV);
+
+	const Eigen::VectorXd K_1 = K(one,   energy_nodes, neutrino_masses_GeV);
+	const Eigen::VectorXd K_2 = K(two,   energy_nodes, neutrino_masses_GeV);
+	const Eigen::VectorXd K_3 = K(three, energy_nodes, neutrino_masses_GeV);
 
 	Eigen::MatrixXd D_1 = ( 1.0 / ( relic_density_cm * delta_r ) )
                               * deltaE_GeV.asDiagonal();
@@ -152,16 +158,65 @@ Eigen::VectorXd transport_flux(Eigen::VectorXd energy_nodes,
 
 	}
 
-
 	return ( constants::PMNS_sq[mu][one]   * current_1  
                + constants::PMNS_sq[mu][three] * current_3 
                + constants::PMNS_sq[mu][two]   * current_2);
 	
 }
 
+Eigen::VectorXd transport_flux_SM(Eigen::VectorXd energy_nodes,
+                                  double gamma, double distance_Mpc, 
+                                  std::array<double,3> neutrino_masses_GeV, 
+                                  double relic_density_cm, 
+                                  int steps) {
+
+    const Loss_term K = SM::K;
+
+    const Gain_term I = SM::I;
+
+    return transport_flux(energy_nodes, gamma, distance_Mpc, 
+                          neutrino_masses_GeV, relic_density_cm, 
+                          K, I, steps);
+
+}
+
+Eigen::VectorXd transport_flux_SI(double g, double m_phi,
+                                  Eigen::VectorXd energy_nodes,
+                                  double gamma, double distance_Mpc, 
+                                  std::array<double,3> neutrino_masses_GeV, 
+                                  double relic_density_cm, 
+                                  int steps) {
+
+    const Loss_term K = [=](mass_state i, const Eigen::VectorXd E_GeV, 
+                        const std::array<double,3> &neutrino_masses_GeV) {
+        
+        return SI::K(i, E_GeV, neutrino_masses_GeV, g, m_phi, false);
+
+    };
+
+    const Gain_term I = [=](mass_state j, mass_state i, 
+                        const Eigen::VectorXd E_GeV, 
+                        const std::array<double,3> &neutrino_masses_GeV) {
+        
+        return SI::I(i, j, E_GeV, neutrino_masses_GeV);
+
+    };
+
+    return transport_flux(energy_nodes, gamma, distance_Mpc, 
+                          neutrino_masses_GeV, relic_density_cm, 
+                          K, I, steps);
+
+}
+
 PYBIND11_MODULE(transport_solver, mod) {
 
 	mod.doc() = "Neutrino flux transport equation solver";
 
-	mod.def("transport_flux", &transport_flux, "Module for solving the propagation of a neutrino flux from a point source through space");
+	mod.def("transport_flux", &transport_flux_SM, 
+                "Module for solving the propagation of a neutrino flux from a  \
+                 point source through space");
+
+        mod.def("transport_flux_SI", &transport_flux_SI, 
+                "Function for propagating a neutrino flux from a               \ 
+                 point source through space with secret interactions");
 }

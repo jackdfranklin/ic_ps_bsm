@@ -11,34 +11,6 @@
 
 namespace SM{
 
-    Eigen::VectorXd initial_flux(const Eigen::VectorXd &E_GeV, 
-                                 double E0, 
-                                 double gamma){
-
-        Eigen::VectorXd result(E_GeV.size());
-
-        double deltalog10E = ( std::log(E_GeV.tail(1)(0)) 
-                                - std::log(E_GeV.head(1)(0)) 
-                             ) / E_GeV.size();
-
-        for(size_t index = 0; index < E_GeV.size(); index++){
-
-            double log10E = std::log10(E_GeV(index));
-
-            double E_plus = std::pow( 10.0, log10E + 0.5 * deltalog10E );
-            double E_minus = std::pow( 10.0, log10E - 0.5 * deltalog10E );
-
-            result(index) = ( std::pow(E0, gamma) 
-                              * ( std::pow(E_plus, 1.0 - gamma ) 
-                                  - std::pow( E_minus, 1.0 - gamma ) ) 
-                                / ( 1.0 - gamma ) ) 
-                            / (E_plus - E_minus);
-
-        }
-
-        return result;
-    }
-
     double K( const mass_state i, 
               const double E_plus, 
               const double E_minus, 
@@ -58,9 +30,9 @@ namespace SM{
 
         double sigma = 0.0;
 
-        for (mass_state j : {one, two, three}){
+        for (mass_state j : {one, two, three}) {
 
-            double s = mass[j] * E_sq;
+            double s = mass.at(j) * E_sq;
 
             //Contribution from l=l' vv + vvbar
             sigma += ( constants::PMNS_sq[e][i]   * constants::PMNS_sq[e][j] 
@@ -78,7 +50,7 @@ namespace SM{
 
             sigma += mixing_sum * 2.0 * s / (3.0 * M_PI);
 
-            if( 2.0 * mass[j] * E_minus >= 4.0 * constants::me_sq_GeV ){
+            if( 2.0 * mass.at(j) * E_minus >= 4.0 * constants::me_sq_GeV ){
 
                 sigma += 
                     constants::PMNS_sq[e][i] * constants::PMNS_sq[e][j]
@@ -96,11 +68,11 @@ namespace SM{
                     / (12. * M_PI);
 
             } 
-            else if( 4.0 * constants::me_sq_GeV <= 2.0 * mass[j] * E_plus ){
+            else if( 4.0 * constants::me_sq_GeV <= 2.0 * mass.at(j) * E_plus ){
 
-                double E_prime = 2.0 * constants::me_sq_GeV/mass[j];
+                double E_prime = 2.0 * constants::me_sq_GeV/mass.at(j);
                 double s_prime = 
-                            mass[j] * (E_plus * E_plus - E_prime * E_prime);
+                            mass.at(j) * (E_plus * E_plus - E_prime * E_prime);
                 double ln_E_prime = std::log(E_plus/E_prime);
                 double deltaE_prime = E_plus - E_prime;
 
@@ -126,9 +98,9 @@ namespace SM{
             }
         }
 
-    sigma *= constants::GF_sq_GeV;
+        sigma *= constants::GF_sq_GeV;
 
-    return sigma * (1.97e-14) * (1.97e-14);
+        return sigma * (1.97e-14) * (1.97e-14);
 
     }
 

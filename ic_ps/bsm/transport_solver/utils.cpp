@@ -105,3 +105,11 @@ Eigen::VectorXd energy_bin_widths(const Eigen::VectorXd &E_GeV){
     return result;
 }
 
+namespace utils {
+
+    double atan_diff(double x, double y){
+        // From herbie
+        return std::atan2( (x - y) , std::fma(x, y, 1.0) );
+    }
+
+} //utils
