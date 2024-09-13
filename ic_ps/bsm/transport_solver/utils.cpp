@@ -7,6 +7,9 @@
 
 #include <Eigen/Dense>
 
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_sf_dilog.h>
+
 #include "constants.hpp"
 
 Eigen::VectorXd initial_flux(const Eigen::VectorXd &E_GeV, 
@@ -69,7 +72,7 @@ Eigen::VectorXd get_diff_flux(const Eigen::VectorXd &int_flux,
 
         double log10E = std::log10( E_GeV(index) );
 
-        double E_plus =  std::pow( 10.0, log10E + 0.5 * deltalog10E );
+        double E_plus  = std::pow( 10.0, log10E + 0.5 * deltalog10E );
         double E_minus = std::pow( 10.0, log10E - 0.5 * deltalog10E );
 
         double deltaE = E_plus - E_minus;
@@ -93,7 +96,7 @@ Eigen::VectorXd energy_bin_widths(const Eigen::VectorXd &E_GeV){
 
         double log10E = std::log10( E_GeV(index) );
 
-        double E_plus = std::pow(  10.0, log10E + 0.5 * deltalog10E );
+        double E_plus  = std::pow( 10.0, log10E + 0.5 * deltalog10E );
         double E_minus = std::pow( 10.0, log10E - 0.5 * deltalog10E );
 
         double deltaE = E_plus - E_minus;
@@ -110,6 +113,38 @@ namespace utils {
     double atan_diff(double x, double y){
         // From herbie
         return std::atan2( (x - y) , std::fma(x, y, 1.0) );
+    }
+
+    double dilog(double x) {
+
+        return gsl_sf_dilog(x);
+
+    }
+
+    std::complex<double> dilog(std::complex<double> z) {
+
+        gsl_sf_result dilog_real, dilog_imag;
+
+        int status = gsl_sf_complex_dilog_e(std::abs(z), std::arg(z), 
+                                            &dilog_real, &dilog_imag);
+
+        handle_gsl_error(status);
+
+        return std::complex<double>(dilog_real.val, dilog_imag.val);
+
+    }
+
+    void handle_gsl_error(int status) {
+
+        if (status) {
+
+            std::cout << "Error occurred in GSL function with code:"
+                      << gsl_strerror(status) << std::endl;
+
+            assert(0);
+
+        }
+
     }
 
 } //utils

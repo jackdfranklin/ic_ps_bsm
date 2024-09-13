@@ -20,8 +20,10 @@ namespace SI {
              const double m_phi,
              const bool majorana){
 
+        constexpr flavour_state flavour = tau;
+
         // Scalar decay width
-        const double Gamma = (majorana ? 1.0 : 2.0) * std::pow(g, 2) * m_phi 
+        const double decay_width = (majorana ? 1.0 : 2.0) * std::pow(g, 2) * m_phi 
                              / ( 16.0 * M_PI );
         const double m_phi_sq = std::pow(m_phi, 2);
         const double Gamma_M = Gamma / m_phi;
@@ -33,51 +35,34 @@ namespace SI {
             double s_plus  = 2.0 * mass.at(j) * E_plus  / std::pow(m_phi, 2);
             double s_minus = 2.0 * mass.at(j) * E_minus / std::pow(m_phi, 2);
     
-            double K_s = std::pow(g, 4) / ( 32.0 * M_PI * m_phi_sq * Gamma);
+            K_tot += K_s(j, flavour, g, m_phi, majorana, decay_width, 
+                         mass.at(j), s_plus, s_minus);
 
-            // If s_plus small, Taylor expand
-            if(s_plus < 1e-5){
+            K_tot += K_t_u(j, flavour, g, m_phi, majorana, decay_width, 
+                         mass.at(j), s_plus, s_minus);
 
-                K_s *= ( 2.0 * m_phi * 
-                    ( ( Gamma_M * ( 1.0 + std::pow(Gamma_M, 2) ) + 2.0 * s_minus )
-                      * ( s_plus - s_minus)
-                      / ( std::pow( 1.0 + std::pow(Gamma_M, 2) , 2) )
-                      + Gamma_M * std::pow( s_plus - s_minus , 2) 
-                            / ( std::pow( 1.0 + std::pow(Gamma_M, 2) , 2) ) )
-                    + Gamma * ( std::log1p( s_plus * ( s_plus - 2.0 ) 
-                                            / ( 1.0 + std::pow(Gamma_M, 2) ) )
-                              - std::log1p( s_minus * ( s_minus - 2.0 ) 
-                                            / ( 1.0 + std::pow(Gamma_M, 2) ) ) 
-                              ) ); 
+            K_tot += K_tu(j, flavour, g, m_phi, majorana, decay_width, 
+                         mass.at(j), s_plus, s_minus);
+            
+            double k_st = K_st(j, flavour, g, m_phi, majorana, decay_width, 
+                               mass.at(j), s_plus, s_minus);
 
-            }
-            else {
+            K_tot += k_st;
 
-                K_s *= ( 2.0 * m_phi 
-                         * utils::atan_diff( m_phi * ( s_plus  - 1.0 ) / Gamma,
-                                             m_phi * ( s_minus - 1.0 ) / Gamma)
-                        + Gamma * ( std::log1p( s_plus * ( s_plus - 2.0 ) 
-                                                / ( 1.0 + std::pow(Gamma_M, 2) ) ) 
-                                  - std::log1p( s_minus * ( s_minus - 2.0 )
-                                                / ( 1.0 + std::pow(Gamma_M, 2) ) ) 
-                                  )
-                           );
+            // s-u interference (only for Majorana fermions)
+            if (majorana) {
+
+                double k_su = k_st;
+                K_tot += k_su;
 
             }
 
-            K_s *= constants::PMNS_sq[tau][j];
-
-            K_tot += ( m_phi_sq / ( 2.0 * mass.at(j) ) ) * K_s;
-
-            // t-u channel without inteference
-            double K_t_u = std::pow(g, 4) / ( 16.0 * M_PI * m_phi_sq)
-                                * ( 2.0 * std::log1p(s_plus)  / s_plus 
-                                  - 2.0 * std::log1p(s_minus) / s_minus
-                                  + std::log1p(s_plus) - std::log1p(s_minus) );
+            K_tot += K_pp(j, flavour, g, m_phi, majorana, decay_width, 
+                         mass.at(j), s_plus, s_minus);
 
         }
 
-        return K_tot * std::pow( 1.97e-14, 2);
+        return utils::GeV2_to_cm2 * K_tot;
 
     }
 
@@ -225,7 +210,304 @@ namespace SI {
             }
         }
 
-        return 0.5 *(1.97e-14) * (1.97e-14)* I_ji;
+        return utils::GeV2_to_cm2 * 0.5 * I_ji;
+    }
+
+    double K_s(mass_state j, flavour_state flavour, double g, double m_phi, 
+               bool majorana, double decay_width, double m_j,
+               double s_plus, double s_minus) {
+
+        double gamma_m = decay_width / m_phi;
+
+        double k_s = std::pow(g, 4) 
+                     / ( 32.0 * M_PI * std::pow(m_phi, 2) * decay_width);
+
+        // If s_plus small, Taylor expand
+        if(s_plus < 1e-5){
+
+            k_s *= ( 2.0 * m_phi * 
+                ( ( gamma_m * ( 1.0 + std::pow(gamma_m, 2) ) + 2.0 * s_minus )
+                  * ( s_plus - s_minus)
+                  / ( std::pow( 1.0 + std::pow(gamma_m, 2) , 2) )
+                  + gamma_m * std::pow( s_plus - s_minus , 2) 
+                        / ( std::pow( 1.0 + std::pow(gamma_m, 2) , 2) ) )
+                + decay_width * ( std::log1p( s_plus * ( s_plus - 2.0 ) 
+                                        / ( 1.0 + std::pow(gamma_m, 2) ) )
+                          - std::log1p( s_minus * ( s_minus - 2.0 ) 
+                                        / ( 1.0 + std::pow(gamma_m, 2) ) ) 
+                          ) ); 
+
+        }
+        else {
+
+            k_s *= ( 2.0 * m_phi 
+                     * utils::atan_diff( m_phi * ( s_plus  - 1.0 ) / decay_width,
+                                         m_phi * ( s_minus - 1.0 ) / decay_width )
+                    + decay_width * ( std::log1p( s_plus * ( s_plus - 2.0 ) 
+                                            / ( 1.0 + std::pow(gamma_m, 2) ) ) 
+                              - std::log1p( s_minus * ( s_minus - 2.0 )
+                                            / ( 1.0 + std::pow(gamma_m, 2) ) ) 
+                              )
+                       );
+
+        }
+
+        k_s *= constants::PMNS_sq[flavour][j];
+
+        return ( std::pow(m_phi, 2) / ( 2.0 * m_j ) ) * k_s;
+        
+
+    }
+
+    double K_t_u(mass_state j, flavour_state flavour, double g, double m_phi, 
+               bool majorana, double decay_width, double m_j, 
+               double s_plus, double s_minus) {
+
+        // t-u channel without inteference
+        double k_t_u = std::pow(g, 4) / ( 16.0 * M_PI * std::pow(m_phi, 2) )
+                            * ( 2.0 * std::log1p(s_plus)  / s_plus 
+                              - 2.0 * std::log1p(s_minus) / s_minus
+                              + std::log1p(s_plus) - std::log1p(s_minus) 
+                              );
+
+        // If negative, rounding errors have occurred so fix to zero
+        if (k_t_u < 0.0) {
+
+            k_t_u = 0.0;
+
+        }
+
+        k_t_u *= 2.0 * constants::PMNS_sq[flavour][j];
+        return ( std::pow(m_phi, 2) / ( 2.0 * m_j ) ) * k_t_u;
+
+    double K_st(mass_state j, flavour_state flavour, double g, double m_phi, 
+               bool majorana, double decay_width, double m_j, 
+               double s_plus, double s_minus) {
+
+        // Interference between u and t channels
+        double k_tu =  ( std::pow(g, 4) 
+                         / ( 32.0 * M_PI * std::pow(m_phi, 2) * s_minus * s_plus ) )
+                       * ( s_minus * std::log1p(s_plus)  
+                           * ( 2.0 + 2.0 * s_plus 
+                                   + s_plus * std::log( 2.0 + s_plus) )
+                         - s_plus  * std::log1p(s_minus) 
+                           * (2.0 + 2.0 * s_minus 
+                                  + s_minus * std::log( 2.0 + s_minus) ) 
+                         + s_minus * s_plus 
+                           * ( utils::dilog( -1.0 - s_plus ) 
+                             - utils::dilog( -1.0 - s_minus) 
+                             + utils::dilog( -s_plus )
+                             - utils::dilog( -s_minus ) 
+                             ) 
+                         );
+
+        k_tu *= constants::PMNS_sq[flavour][j];
+
+        if (!majorana) {
+
+            k_tu *= 0.5;
+
+        }
+
+        return ( std::pow(m_phi, 2) / ( 2.0 * m_j ) ) * k_tu;
+
+    }
+
+    double K_st(mass_state j, flavour_state flavour, double g, double m_phi, 
+               bool majorana, double decay_width, double m_j, 
+               double s_plus, double s_minus) {
+
+        using namespace std::complex_literals;
+
+        double gamma_m = decay_width / m_phi;
+
+        std::complex<double> denom = 2i + gamma_m;
+
+        std::complex<double> z1_plus  = 1i * ( 1.0 + s_plus )  / denom;
+        std::complex<double> z1_minus = 1i * ( 1.0 + s_minus ) / denom;
+
+        std::complex<double> z2_plus  = std::conj(z1_plus);
+        std::complex<double> z2_minus = std::conj(z1_minus);
+
+        std::complex<double> dilogdiff_z1 = utils::dilog(z1_plus) 
+                                          - utils::dilog(z1_minus);
+        std::complex<double> dilogdiff_z2 = utils::dilog(z2_plus) 
+                                          - utils::dilog(z2_minus);
+
+        double k_st = dilogdiff_z1.real() + dilogdiff_z2.real()
+                    + gamma_m 
+                      * ( dilogdiff_z2.imag() - dilogdiff_z1.imag() 
+                        + 2.0 * std::arg( 1.0 - z2_plus) * std::log1p(s_plus)
+                        - 2.0 * std::arg( 1.0 - z2_minus ) * std::log1p(s_minus)
+                        )
+                    + std::log1p( 4.0 / std::pow(gamma_m, 2) ) 
+                        * ( std::log1p(s_minus) - std::log1p(s_plus) )
+                    + std::log1p( std::pow( (-1.0 + s_plus ) / gamma_m , 2) )
+                        * ( std::log1p(s_plus) - 1.0 - std::pow(gamma_m, 2) )
+                    - std::log1p( std::pow( (-1.0 + s_minus ) / gamma_m , 2) )
+                        * ( std::log1p(s_minus) - 1.0 - std::pow(gamma_m, 2) ) 
+                    + 2.0 * ( utils::dilog(-s_plus) - utils::dilog(-s_minus) );
+
+        k_st *= - ( std::pow(g, 4) 
+                  / ( 32.0 * M_PI * std::pow(m_phi, 2) 
+                           * (1.0 + std::pow(gamma_m, 2) ) ) 
+                  );
+
+        k_st *= constants::PMNS_sq[flavour][j];
+
+        return ( std::pow(m_phi, 2) / ( 2.0 * mass.at(j) ) ) * k_st;
+    
+    }
+
+    double K_pp(mass_state j, flavour_state flavour, double g, double m_phi, 
+               bool majorana, double decay_width, double m_j, 
+               double s_plus, double s_minus) {
+
+        /* Double scalar production */
+        double k_pp = 0.0;
+
+        if( s_plus > 4.0 ){
+
+            if( s_minus > 4.0 ) {
+
+                k_pp +=  12.0 * std::sqrt( ( -4.0 + s_minus ) / s_minus );
+
+                k_pp -= 12.0 * std::sqrt( ( -4.0 + s_plus ) / s_plus ); 
+                         
+                k_pp -= 2 * std::log( std::pow( std::sqrt( -4.0 + s_minus ) 
+                                                - std::sqrt(s_minus), 2) / 4.0)
+                          * std::log( std::pow( -2.0 + s_minus 
+                                                + std::sqrt( ( -4.0 + s_minus ) 
+                                                             * s_minus ) 
+                                                , 2) / 4.0);
+                         
+                k_pp -= ( 6.0 + s_minus * std::log( ( -2.0 + s_minus ) * s_minus ) ) 
+                        * std::log( std::pow( -2.0 + s_minus 
+                                                + std::sqrt( ( -4.0 + s_minus ) 
+                                                              * s_minus )
+                                                , 2)
+                                      / std::pow( 2.0 - s_minus 
+                                          + std::sqrt( ( -4.0 + s_minus ) 
+                                                       * s_minus )
+                                                 , 2) )
+                        / s_minus; 
+
+                k_pp -= 24.0 * ( std::sqrt( ( -4.0 + s_minus ) / s_minus ) 
+                                - std::sqrt( ( -4.0 + s_plus ) / s_plus ) 
+                                - std::log( std::sqrt( -4.0 + s_minus ) 
+                                            + std::sqrt(s_minus)) 
+                                + std::log( std::sqrt( -4.0 + s_plus ) 
+                                            + std::sqrt(s_plus))
+                                ); 
+
+                k_pp += 2.0 * std::log( std::pow( std::sqrt( -4.0 + s_plus ) 
+                                                 - std::sqrt(s_plus), 2) / 4.0)
+                            * std::log( std::pow( std::sqrt( ( -4.0 + s_plus ) 
+                                                             * s_plus )
+                                                  - 2.0 + s_plus 
+                                                 , 2) / 4.0 ); 
+
+                k_pp +=  ( 6.0 + s_plus * std::log( ( -2.0 + s_plus ) * s_plus ) )
+                         * std::log( std::pow( -2.0 + s_plus 
+                                        + std::sqrt( ( -4.0 + s_plus ) * s_plus )
+                                              , 2)
+                                  / std::pow( 2.0 - s_plus 
+                                        + std::sqrt( ( -4.0 + s_plus ) * s_plus ) 
+                                             , 2) )
+                         / s_plus ;
+
+                k_pp += 8.0 * ( utils::dilog( -4.0 
+                                              / std::pow( std::sqrt(s_minus) 
+                                                    + std::sqrt( -4.0 + s_minus )
+                                                         , 2) )
+                               - utils::dilog( -4.0 
+                                               / std::pow( std::sqrt(s_plus) 
+                                                    + std::sqrt( -4.0 + s_plus )
+                                                          , 2) )
+                              ); 
+
+                k_pp += 2.0 * ( utils::dilog( -4.0 
+                                      / std::pow( -2.0 + s_minus 
+                                                  + std::sqrt( s_minus 
+                                                        * ( -4.0 + s_minus ) ) 
+                                             , 2) 
+                                            )
+                              - utils::dilog( -4.0 
+                                      / std::pow( -2.0 + s_plus 
+                                                  + std::sqrt( s_plus 
+                                                        * ( -4.0 + s_plus ) ) 
+                                             , 2) 
+                                            ) 
+                              );
+
+            }
+            else {
+
+                constexpr double dilog1m = - std::pow(M_PI, 2) / 12.0;
+
+                //Replace s_minus with 4
+                k_pp -= 12.0 * std::sqrt( ( -4.0 + s_plus ) / s_plus ); 
+
+                k_pp -= 24.0 * ( -std::sqrt( ( -4.0 + s_plus ) / s_plus ) 
+                                 - std::log(2) 
+                                 + std::log( std::sqrt( -4.0 + s_plus ) 
+                                             + std::sqrt(s_plus)
+                                           )
+                               ); 
+
+                k_pp += 2.0 * std::log( std::pow( std::sqrt( -4.0 + s_plus ) 
+                                                  - std::sqrt(s_plus)
+                                             , 2) 
+                                        / 4.0 )
+                        * std::log( std::pow( -2.0 + s_plus 
+                                        + std::sqrt( ( -4.0 + s_plus ) * s_plus )
+                                         , 2)
+                                    / 4.0 ); 
+
+                k_pp += ( 6.0 + s_plus * std::log( ( -2.0 + s_plus ) * s_plus ) )
+                        * std::log( std::pow( -2.0 + s_plus 
+                                        + std::sqrt( ( -4.0 + s_plus ) * s_plus )
+                                         , 2)
+                                    / std::pow( 2.0 - s_plus 
+                                                + std::sqrt( ( -4.0 + s_plus ) 
+                                                             * s_plus 
+                                                           )
+                                           , 2)
+                                  )
+                        / s_plus; 
+
+                k_pp += 8.0 * ( dilogm1 
+                                - utils::dilog( -4.0 
+                                        / std::pow( std::sqrt( -4.0 + s_plus) 
+                                                    + std::sqrt(s_plus) 
+                                              , 2 ) 
+                                              ) 
+                              ); 
+
+                k_pp += 2.0 * ( dilogm1 
+                                - utils::dilog( -4.0  
+                                        / std::pow( -2.0 + s_plus 
+                                              + std::sqrt( ( -4.0 + s_plus )
+                                                             * s_plus )
+                                              , 2 )
+                                              )
+                              );
+
+            }
+
+            k_pp *= constants::PMNS_sq[flavour][j];
+
+            k_pp *= std::pow(g, 4) / ( 128.0 * M_PI * std::pow(mphi, 2) )
+
+            // For Majorana fermions, we can scatter off neutrinos and antineutrinos
+            if(majorana) {
+                Gamma_pp *= 2.0;
+            }
+
+        }
+
+        return std::pow(m_phi, 2) / ( 2.0 * m_j ) * k_pp;
+
     }
 
 } //SI

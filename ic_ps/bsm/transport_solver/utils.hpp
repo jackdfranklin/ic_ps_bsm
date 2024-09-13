@@ -3,10 +3,11 @@
 
 #include <array>
 #include <cmath>
+#include <complex>
 
 #include <Eigen/Dense>
 
-enum flavour {e, mu, tau};
+enum flavour_state {e, mu, tau};
 enum mass_state {one = 0, two = 1, three = 2};
 
 Eigen::VectorXd initial_flux(const Eigen::VectorXd &E_GeV, double E0, double gamma);
@@ -23,6 +24,13 @@ namespace utils{
 
     double atan_diff(double x, double y);
 
+    double dilog(double x);
+
+    std::complex<double> dilog(std::complex<double> z);
+
+    void handle_gsl_error(int status);
+
+    constexpr double GeV2_to_cm2 = std::pow(1.97e-14, 2);
 }
 
 #endif // UTILS_H_
