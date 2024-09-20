@@ -4,6 +4,7 @@
 #include <complex>
 #include <iostream>
 #include <stdio.h>
+#include <array>
 
 #include <Eigen/Dense>
 
@@ -18,9 +19,7 @@ Eigen::VectorXd initial_flux(const Eigen::VectorXd &E_GeV,
 
     Eigen::VectorXd result(E_GeV.size());
 
-    double deltalog10E = ( std::log(E_GeV.tail(1)(0)) 
-                            - std::log(E_GeV.head(1)(0)) 
-                         ) / E_GeV.size();
+    double deltalog10E = std::log10(E_GeV.head(2)(1)) - std::log10(E_GeV.head(1)(0));
 
     for(size_t index = 0; index < E_GeV.size(); index++){
 
@@ -125,8 +124,8 @@ namespace utils {
 
         gsl_sf_result dilog_real, dilog_imag;
 
-        int status = gsl_sf_complex_dilog_e(std::abs(z), std::arg(z), 
-                                            &dilog_real, &dilog_imag);
+        int status = gsl_sf_complex_dilog_xy_e(std::real(z), std::imag(z), 
+                                               &dilog_real, &dilog_imag);
 
         handle_gsl_error(status);
 

@@ -111,8 +111,7 @@ namespace SM{
         Eigen::VectorXd result(E_GeV.size());
 
         double deltalog10E = 
-                    ( std::log(E_GeV.tail(1)(0)) - std::log(E_GeV.head(1)(0)) ) 
-                    / E_GeV.size();
+                ( std::log10( E_GeV.head(2)(1) ) - std::log10( E_GeV.head(1)(0) ) ); 
 
         for(size_t index = 0; index < E_GeV.size(); index++){
 
@@ -222,8 +221,7 @@ namespace SM{
         Eigen::MatrixXd I_ji = Eigen::MatrixXd::Zero(E_GeV.size(), E_GeV.size());
 
         double deltalog10E = 
-                ( std::log( E_GeV.tail(1)(0) ) - std::log( E_GeV.head(1)(0) ) ) 
-                / E_GeV.size();
+                ( std::log10( E_GeV.head(2)(1) ) - std::log10( E_GeV.head(1)(0) ) ); 
 
         for(size_t n = 0; n < E_GeV.size(); n++){
 

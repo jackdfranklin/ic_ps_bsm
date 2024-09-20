@@ -35,6 +35,7 @@ Eigen::VectorXd transport_flux(Eigen::VectorXd energy_nodes,
 
 	const Eigen::MatrixXd I_11 =  I(one, one, energy_nodes, 
                                         neutrino_masses_GeV);
+        //std::cout<<I_11<<std::endl;
 	const Eigen::MatrixXd I_21 =  I( two, one, energy_nodes, 
                                         neutrino_masses_GeV);
 	const Eigen::MatrixXd I_31 =  I(three, one, energy_nodes, 
@@ -55,6 +56,7 @@ Eigen::VectorXd transport_flux(Eigen::VectorXd energy_nodes,
                                         neutrino_masses_GeV);
 
 	const Eigen::VectorXd K_1 = K(one,   energy_nodes, neutrino_masses_GeV);
+        //std::cout<<K_1<<std::endl;
 	const Eigen::VectorXd K_2 = K(two,   energy_nodes, neutrino_masses_GeV);
 	const Eigen::VectorXd K_3 = K(three, energy_nodes, neutrino_masses_GeV);
 
@@ -118,32 +120,36 @@ Eigen::VectorXd transport_flux(Eigen::VectorXd energy_nodes,
                                         + constants::PMNS_sq[e][three]);
 
 
+        Eigen::VectorXd del_1, del_2, del_3;
+        Eigen::VectorXd b_1, b_3;
+        Eigen::VectorXd new_1, new_2, new_3;
+
 	for (int step = 0; step < steps; step++){
 
-		Eigen::VectorXd del_1 = sigma_1 * current_1 
+		del_1 = sigma_1 * current_1 
                                          + I_11 * current_1 
                                          + I_21 * current_2 
                                          + I_31 * current_3;
 
-		Eigen::VectorXd del_2 = sigma_2 * current_2 
+		del_2 = sigma_2 * current_2 
                                          + I_12 * current_1 
                                          + I_22 * current_2 
                                          + I_32 * current_3;
 
-		Eigen::VectorXd del_3 = sigma_3 * current_3 
+		del_3 = sigma_3 * current_3 
                                         + I_13 * current_1 
                                         + I_23 * current_2 
                                         + I_33 * current_3;
 												   
-		Eigen::VectorXd b_1 = del_1 + d_2 * del_2 + d_3 * del_3;
-		Eigen::VectorXd b_3 = del_3 + I_23 * D_2_inv * del_2;
+		b_1 = del_1 + d_2 * del_2 + d_3 * del_3;
+		b_3 = del_3 + I_23 * D_2_inv * del_2;
 		
-		Eigen::VectorXd new_1 = 
+		new_1 = 
                     M_1.triangularView<Eigen::Upper>().solve(b_1);
-		Eigen::VectorXd new_3 = 
+		new_3 = 
                     G_3.triangularView<Eigen::Upper>().solve(b_3 
                                                              + c_3 * current_1);
-		Eigen::VectorXd new_2 = 
+		new_2 = 
                     D_2.triangularView<Eigen::Upper>().solve(del_2 
                                                              + I_12 * new_1 
                                                              + I_32 * new_3);
@@ -186,11 +192,12 @@ Eigen::VectorXd transport_flux_SI(double g, double m_phi,
                                   std::array<double,3> neutrino_masses_GeV, 
                                   double relic_density_cm, 
                                   int steps) {
+    bool majorana = true;
 
     const Loss_term K = [=](mass_state i, const Eigen::VectorXd E_GeV, 
                         const std::array<double,3> &neutrino_masses_GeV) {
         
-        return SI::K(i, E_GeV, neutrino_masses_GeV, g, m_phi, false);
+        return SI::K(i, E_GeV, neutrino_masses_GeV, g, m_phi, majorana);
 
     };
 
@@ -198,7 +205,7 @@ Eigen::VectorXd transport_flux_SI(double g, double m_phi,
                         const Eigen::VectorXd E_GeV, 
                         const std::array<double,3> &neutrino_masses_GeV) {
         
-        return SI::I(i, j, E_GeV, neutrino_masses_GeV);
+        return SI::I(j, i, E_GeV, neutrino_masses_GeV, g, m_phi, majorana);
 
     };
 

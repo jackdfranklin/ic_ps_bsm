@@ -22,6 +22,11 @@ Eigen::VectorXd energy_bin_widths(const Eigen::VectorXd &E_GeV);
 
 namespace utils{
 
+    /* Weights and nodes for 3-point Gauss-Legendre quadrature */
+    constexpr std::array<double, 3> w_integ = {5./9., 8./9., 5./9.};
+    constexpr std::array<double, 3> x_integ = {-std::sqrt(3./5.), 0, std::sqrt(3./5.)};
+
+
     double atan_diff(double x, double y);
 
     double dilog(double x);
