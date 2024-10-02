@@ -2,8 +2,10 @@ eigen_dep = dependency('eigen3', version : '>=3.2.7')
 
 gsl_dep = dependency('gsl', version : '>=2.7')
 
-py.extension_module('transport_solver',
-    ['transport_solver.cpp',
+py.extension_module('transport_solver', 
+    [
+    'transport_solver.cpp',
+    'transport_flux_redshift.cpp',
     'utils.cpp',
     'constants.hpp',
     'secret_interactions.cpp',

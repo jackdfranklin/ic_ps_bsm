@@ -13,6 +13,7 @@
 #include "constants.hpp"
 #include "sm_interactions.hpp"
 #include "secret_interactions.hpp"
+#include "transport_flux_redshift.hpp"
 
 typedef std::function<Eigen::VectorXd(mass_state, Eigen::VectorXd, std::array<double, 3>)> Loss_term; 
 
@@ -215,6 +216,51 @@ Eigen::VectorXd transport_flux_SI(double g, double m_phi,
 
 }
 
+Eigen::VectorXd transport_flux_SM_redshift(Eigen::VectorXd energy_nodes,
+                                  double gamma, double zmax, 
+                                  std::array<double,3> neutrino_masses_GeV, 
+                                  double relic_density_cm, 
+                                  int steps) {
+
+    const Loss_term K = SM::K;
+
+    const Gain_term I = SM::I;
+
+    return transport_flux_z(energy_nodes, gamma, zmax, 
+                          neutrino_masses_GeV, relic_density_cm, 
+                          K, I, steps);
+
+}
+
+Eigen::VectorXd transport_flux_SI_redshift(double g, double m_phi,
+                                  Eigen::VectorXd energy_nodes,
+                                  double gamma, double zmax, 
+                                  std::array<double,3> neutrino_masses_GeV, 
+                                  double relic_density_cm, 
+                                  int steps) {
+    bool majorana = true;
+
+    const Loss_term K = [=](mass_state i, const Eigen::VectorXd E_GeV, 
+                        const std::array<double,3> &neutrino_masses_GeV) {
+        
+        return SI::K(i, E_GeV, neutrino_masses_GeV, g, m_phi, majorana);
+
+    };
+
+    const Gain_term I = [=](mass_state j, mass_state i, 
+                        const Eigen::VectorXd E_GeV, 
+                        const std::array<double,3> &neutrino_masses_GeV) {
+        
+        return SI::I(j, i, E_GeV, neutrino_masses_GeV, g, m_phi, majorana);
+
+    };
+
+    return transport_flux_z(energy_nodes, gamma, zmax, 
+                          neutrino_masses_GeV, relic_density_cm, 
+                          K, I, steps);
+
+}
+
 PYBIND11_MODULE(transport_solver, mod) {
 
 	mod.doc() = "Neutrino flux transport equation solver";
@@ -226,4 +272,12 @@ PYBIND11_MODULE(transport_solver, mod) {
         mod.def("transport_flux_SI", &transport_flux_SI, 
                 "Function for propagating a neutrino flux from a               \ 
                  point source through space with secret interactions");
+
+	mod.def("transport_flux_SM_redshift", &transport_flux_SM_redshift, 
+                "Function for finding the final flux at Earth of a neutrino  \
+                 flux from a point source at redshift zmax undergoing SM interactions");
+
+        mod.def("transport_flux_SI_redshift", &transport_flux_SI_redshift, 
+                "Function for finding the final flux at Earth of a neutrino  \
+                 flux from a point source at redshift zmax undergoing SI interactions");
 }

@@ -128,27 +128,25 @@ namespace SI {
             J_ji += J_tu(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
                          t_plus, t_minus);
 
-            J_ji += J_st(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
-                         t_plus, t_minus);
+            double temp = J_st(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
+                        t_plus, t_minus);
 
+            if(temp < 0.0){
+
+                J_st(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
+                        t_plus, t_minus);
+            }
+
+            J_ji += temp;
 
             J_ji += J_su(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
                          t_plus, t_minus);
 
         }
 
-        if (J_ji < 0.0) {
-
-            J_ji = 0.0;
-            //std::cout<<"j = "<<j<<", i = "<<i<<std::endl;
-            //std::cout<<"E_minus = "<<En_minus<<" GeV, E_plus = "<<En_plus<<" GeV"<<std::endl;
-            //std::cout<<"J_ji = "<<J_ji<<std::endl;
-
-        }
-
         J_ji *= constants::PMNS_sq[flavour][i] * constants::PMNS_sq[flavour][j];
 
-        return utils::GeV2_to_cm2 * J_ji;
+        return J_ji;
     }
 
     double J(mass_state j, mass_state i, 
@@ -198,7 +196,7 @@ namespace SI {
 
         J_ji *= constants::PMNS_sq[flavour][i] * constants::PMNS_sq[flavour][j];
 
-        return utils::GeV2_to_cm2 * J_ji;
+        return J_ji;
     }
 
     Eigen::MatrixXd I(mass_state j, mass_state i, 
@@ -918,17 +916,16 @@ namespace SI {
                   / ( 2.0 * std::pow(delta, 2) );
         } 
         else {
-            dilogdiff_z7z8 = utils::dilog(z7) - utils::dilog(z8);
+            dilogdiff_z7z8 = utils::dilogdiff(z7, z8);
 
-            dilogdiff_z5z1 = utils::dilog(z5) - utils::dilog(z1);
+            dilogdiff_z5z1 = utils::dilogdiff(z5, z1);
 
-            dilogdiff_z2z6 = utils::dilog(z2) - utils::dilog(z6);
+            dilogdiff_z2z6 = utils::dilogdiff(z2, z6);
 
-            dilogdiff_z4z3 = utils::dilog(z4) - utils::dilog(z3);
+            dilogdiff_z4z3 = utils::dilogdiff(z4, z3);
         }
 
         double j_st;
-
         if(majorana) {
             j_st =  2.0 * M_PI * std::arg( -1.0 + 1i * gamma_m - t_minus ) - 2.0 * M_PI * std::arg( -1.0 + 1i * gamma_m - t_plus );
 
@@ -943,7 +940,7 @@ namespace SI {
 
             j_st -= std::arg( ( gamma_m + 1i * ( 1.0 + t_minus ) ) 
                               / ( 2i + gamma_m ) ) 
-                    * ( 2.0 * M_PI + 2  * gamma_m * std::log1p(-t_minus) );
+                    * ( 2.0 * M_PI + 2.0 * gamma_m * std::log1p(-t_minus) );
             
             j_st += std::arg( ( gamma_m + 1i * ( 1.0 + t_plus ) ) 
                               / ( 2i + gamma_m ) ) 
@@ -967,8 +964,9 @@ namespace SI {
                               + std::pow( 2.0 + t_minus , 2) ) 
                     * std::log1p( t_minus - t_plus );
 
-            j_st -= 2.0 * std::log1p(-t_minus) * std::log(-t_plus) 
-                    - 2.0 * gamma_m * M_PI 
+            j_st -= 2.0 * std::log1p(-t_minus) * std::log(-t_plus);
+
+            j_st -= 2.0 * gamma_m * M_PI 
                       * ( std::log( std::pow(t_plus, 2) ) 
                           + std::log1p( t_minus - t_plus ) );
 
@@ -1049,6 +1047,10 @@ namespace SI {
                       * std::pow(m_phi, 4) );
         }
 
+        if(j_st < 0.0){
+            j_st = 0.0;
+        }
+
         j_st *= constants::PMNS_sq[flavour][k];
         return ( std::pow(m_phi, 4) / ( 2.0 * m_k ) ) * j_st;
     }
@@ -1088,7 +1090,7 @@ namespace SI {
         }
         j_s *= constants::PMNS_sq[flavour][k];
         if(!majorana)
-            j_s /= 20.; // For Dirac, one of the final neutrinos is not observable
+            j_s /= 2.0; // For Dirac, one of the final neutrinos is not observable
 
         return std::pow(m_phi, 4) / ( 2.0 * m_k ) * j_s;
 
@@ -1340,46 +1342,76 @@ namespace SI {
                 log1p_abs_t_minus = std::log(-1-t_minus);
             }
 
-            j_tu = -4*(s_minus - s_plus)*(1 + t_minus)*(t_minus - t_plus)*(1 + t_plus); 
-            j_tu += 2*s_minus*s_plus*t_plus*(std::log(s_minus/s_plus) - std::log1p(s_minus + t_minus) + std::log1p(s_plus + t_minus));
-            j_tu += 2*s_plus*(1 + t_minus)*(1 + t_plus)*(std::log1p(-t_minus) - std::log1p(s_minus + t_minus) - std::log1p(-t_plus) + std::log1p(s_minus + t_plus)); 
-            j_tu -= 2*s_minus*(1 + t_minus)*(1 + t_plus)*(std::log1p(-t_minus) - std::log1p(s_plus + t_minus) - std::log1p(-t_plus) + std::log1p(s_plus + t_plus)); 
-            j_tu += 2*s_minus*s_plus*(-std::log1p(s_minus + t_minus) + std::log1p(s_plus + t_minus) + std::log1p(s_minus + t_plus) - std::log1p(s_plus + t_plus)); 
-            j_tu += s_minus*s_plus*(1 + t_minus)*(1 + t_plus)*(std::log((2 + s_minus)/s_minus)*(std::log(s_plus) + std::log1p(s_minus + t_plus)) - std::log((2 + s_plus)/s_plus)*(std::log(s_minus) + std::log1p(s_plus + t_plus)) + 
-                     std::log1p(-t_plus)*(std::log(s_minus/s_plus) - std::log1p(s_minus + t_plus) + std::log1p(s_plus + t_plus))); 
-            j_tu += s_minus*s_plus*(1 + t_minus)*(1 + t_plus)*((std::log(s_plus) + std::log1p(s_minus + t_minus))*(std::log(s_minus/(2 + s_minus)) + std::log1p(-t_minus) - log1p_abs_t_minus) + 
-                     (std::log(s_minus) + std::log1p(s_plus + t_minus))*(std::log((2 + s_plus)/s_plus) - std::log1p(-t_minus) + log1p_abs_t_minus));
-            j_tu += s_minus*s_plus*(std::log(s_plus/s_minus) + std::log1p(s_minus + t_plus) - std::log1p(s_plus + t_plus))*(2*t_minus + (1 + t_minus)*(1 + t_plus)*log1p_abs_t_plus); 
-            j_tu += s_minus*s_plus*(1 + t_minus)*(1 + t_plus)*(utils::dilog((1 + s_minus + t_minus)/(2 + s_minus)) - utils::dilog((1 + s_plus + t_minus)/(2 + s_plus)) - utils::dilog((1 + s_minus + t_plus)/(2 + s_minus)) + utils::dilog((1 + s_plus + t_plus)/(2 + s_plus))); 
-            j_tu += s_minus*s_plus*(1 + t_minus)*(1 + t_plus)*(FCTR_t_plus + FCTR_t_minus);
-            j_tu *= std::pow(g, 4) / ( 32*M_PI*std::pow(m_phi, 4)*s_minus*s_plus*(1 + t_minus)*(1 + t_plus));
+            j_tu = -4.0 * ( s_minus - s_plus ) * ( 1.0 + t_minus ) 
+                        * ( t_minus - t_plus ) * ( 1.0 + t_plus ); 
+            
+            j_tu += 2.0 * s_minus * s_plus * t_plus 
+                    * ( std::log( s_minus / s_plus ) 
+                        - std::log1p( s_minus + t_minus ) 
+                        + std::log1p( s_plus + t_minus ) );
 
-            if( j_tu < 0 || std::isnan(j_tu) ) { // Roundoff errors! Compute the integral numerically
-                double a_y = t_plus, b_y = t_minus, a_x = s_minus, b_x = s_plus;
-                // Nodes at which the integrand will be evaluated
-                double y[3], x[3], F[3][3];
-                double j_tu = 0;
-                for(int i=0; i<3; ++i)
-                    for(int j=0; j<3; ++j){
-                        y[i] = (b_y-a_y)/2. * utils::x_integ[i] + (b_y+a_y)/2.;
-                        x[j] = (b_x-a_x)/2. * utils::x_integ[j] + (b_x+a_x)/2.;
-                        F[i][j] = 2*y[i]*(-y[i]-x[j])/std::pow(x[j], 2) / ((y[i]-1)*(-y[i]-x[j]-1));
-                        j_tu += utils::w_integ[i] * utils::w_integ[j] * F[i][j];
-                    }
-                j_tu *= 1./4. * (b_y - a_y) * (b_x - a_x);
+            j_tu += 2.0 * s_plus * ( 1.0 + t_minus ) * ( 1.0 + t_plus )
+                    * ( std::log1p(-t_minus) - std::log1p( s_minus + t_minus ) 
+                        - std::log1p(-t_plus) + std::log1p( s_minus + t_plus ) ); 
 
-                j_tu *= std::pow(g, 4)/(16*M_PI * std::pow(m_phi, 4));
-            }
+            j_tu -= 2.0 * s_minus * ( 1.0 + t_minus ) * ( 1.0 + t_plus )
+                    * ( std::log1p(-t_minus) - std::log1p( s_plus + t_minus ) 
+                        - std::log1p(-t_plus) + std::log1p( s_plus + t_plus ) ); 
+
+            j_tu += 2.0 * s_minus * s_plus * ( -std::log1p( s_minus + t_minus ) 
+                    + std::log1p( s_plus + t_minus ) 
+                    + std::log1p( s_minus + t_plus ) 
+                    - std::log1p( s_plus + t_plus ) ); 
+
+            j_tu += s_minus * s_plus * ( 1.0 + t_minus ) * ( 1.0 + t_plus )
+                    * ( std::log( ( 2.0 + s_minus ) / s_minus ) 
+                        * ( std::log(s_plus) + std::log1p( s_minus + t_plus ) ) 
+                        - std::log( ( 2.0 + s_plus ) / s_plus ) 
+                          * ( std::log(s_minus) + std::log1p( s_plus + t_plus ) ) 
+                        + std::log1p(-t_plus) 
+                            * ( std::log( s_minus / s_plus ) 
+                                - std::log1p( s_minus + t_plus ) 
+                                + std::log1p( s_plus + t_plus ) ) ); 
+
+            j_tu += s_minus * s_plus * ( 1.0 + t_minus ) * ( 1.0 + t_plus )
+                    * ( ( std::log(s_plus) + std::log1p( s_minus + t_minus ) )
+                        * ( std::log( s_minus / ( 2.0 + s_minus ) ) 
+                                + std::log1p(-t_minus) - log1p_abs_t_minus ) 
+                        + ( std::log(s_minus) + std::log1p( s_plus + t_minus ) )
+                            * ( std::log( ( 2.0 + s_plus ) / s_plus ) 
+                                - std::log1p(-t_minus) + log1p_abs_t_minus ) );
+
+            j_tu += s_minus * s_plus 
+                    * ( std::log( s_plus / s_minus ) 
+                        + std::log1p( s_minus + t_plus ) 
+                        - std::log1p( s_plus + t_plus ) ) 
+                    * ( 2.0 * t_minus 
+                        + ( 1.0 + t_minus ) * ( 1.0 + t_plus ) 
+                        * log1p_abs_t_plus ); 
+            
+            j_tu += s_minus * s_plus * ( 1.0 + t_minus ) * ( 1.0 + t_plus )
+                    * ( utils::dilog( ( 1.0 + s_minus + t_minus ) 
+                                       / ( 2.0 + s_minus ) ) 
+                        - utils::dilog( ( 1.0 + s_plus + t_minus ) 
+                                       / ( 2.0 + s_plus ) ) 
+                        - utils::dilog( ( 1.0 + s_minus + t_plus )
+                                        / ( 2.0 + s_minus ) ) 
+                        + utils::dilog( ( 1.0 + s_plus + t_plus ) 
+                                        / ( 2.0 + s_plus ) ) ); 
+
+            j_tu += s_minus * s_plus * ( 1.0 + t_minus ) * ( 1.0 + t_plus )
+                    *( FCTR_t_plus + FCTR_t_minus );
+
+            j_tu *= std::pow(g, 4) 
+                    / ( 32.0 * M_PI * std::pow(m_phi, 4) * s_minus * s_plus 
+                             * ( 1.0 + t_minus ) * ( 1.0 + t_plus ) );
+            
         }
         else {
             j_tu = 0.0;
         }
 
         j_tu *= constants::PMNS_sq[flavour][k];
-
-        if (std::isnan(j_tu)) {
-            std::cout<<s_minus<<", "<<s_plus<<"; "<<t_plus<<", "<<t_minus<<std::endl;
-        }
 
         return std::pow(m_phi, 4) / ( 2.0 * m_k ) * j_tu; 
     }
@@ -1423,66 +1455,73 @@ namespace SI {
                                - std::real(dilog_z5) + std::real(dilog_z6) 
                                + std::real(dilog_z7) - std::real(dilog_z8) );
 
-                j_st += 2.0 * gamma_m * ( std::arg(-(1.0/(1.0 + t_minus))) 
-                                    - std::arg(-( (-1.0 + 1i*gamma_m + s_minus)
-                                                  /(2.0 - 1i*gamma_m + t_minus))))
-                        * std::log1p(s_minus + t_minus);
+                j_st += 2.0 * gamma_m * ( std::arg( -1.0 / ( 1.0 + t_minus ) ) 
+                            - std::arg( ( 1.0 - 1i * gamma_m - s_minus )
+                                / ( 2.0 - 1i * gamma_m + t_minus ) ) )
+                        * std::log1p( s_minus + t_minus );
                 
-                j_st -= 2*gamma_m*(std::arg(-(1.0/(1.0 + t_minus))) 
-                            - std::arg(-((-1.0 + 1i*gamma_m + s_plus)
-                                        /(2.0 - 1i*gamma_m + t_minus))))
-                        * std::log1p(s_plus + t_minus);
+                j_st -= 2.0 * gamma_m * ( std::arg( -1.0 / ( 1.0 + t_minus ) ) 
+                            - std::arg( ( 1.0 - 1i * gamma_m - s_plus )
+                                        / ( 2.0 - 1i * gamma_m + t_minus ) ) )
+                        * std::log1p( s_plus + t_minus );
                 
-                j_st += 2.0*gamma_m*(std::arg(-(1.0/(1.0 + t_plus))) 
-                            - std::arg(-((-1.0 + 1i*gamma_m + s_plus)
-                                        /(2.0 - 1i*gamma_m + t_plus))))
-                        *std::log1p(s_plus + t_plus);
-                j_st -= 2*gamma_m*(std::arg(-(1.0/(1.0 + t_plus))) 
-                                - std::arg(-((-1.0 + 1i*gamma_m + s_minus)
-                                            /(2.0 - 1i*gamma_m + t_plus))))
-                        *std::log1p(s_minus + t_plus);
+                j_st += 2.0 * gamma_m * ( std::arg( -1.0 / ( 1.0 + t_plus ) ) 
+                            - std::arg( ( 1.0 - 1i * gamma_m - s_plus)
+                                        / ( 2.0 - 1i * gamma_m + t_plus ) ) )
+                        * std::log1p( s_plus + t_plus );
+                
+                j_st -= 2.0 * gamma_m * ( std::arg( -1.0 / ( 1.0 + t_plus ) ) 
+                            - std::arg( (1.0 - 1i * gamma_m - s_minus )
+                                        / ( 2.0 - 1i * gamma_m + t_plus ) ) )
+                        * std::log1p( s_minus + t_plus );
 
-                j_st += 2.0*(gamma_m*std::arg(-1.0 + 1i*gamma_m + s_minus) 
-                        - gamma_m*std::arg(-1.0 + 1i*gamma_m + s_plus) 
-                        + std::log1p(std::pow(-1.0 + s_plus, 2)/std::pow(gamma_m, 2))/2.0 
-                        - std::log1p(std::pow(-1.0 + s_minus, 2)/std::pow(gamma_m, 2))/2.0 
-                        + std::log(s_minus) - std::log(s_plus))
-                    * (2.0*(t_minus - t_plus) + (std::log1p(-t_minus) - std::log1p(-t_plus))); 
+                j_st += 2.0 * ( gamma_m * std::arg( -1.0 + 1i * gamma_m + s_minus ) 
+                        - gamma_m * std::arg( -1.0 + 1i * gamma_m + s_plus ) 
+                        + std::log1p( std::pow( -1.0 + s_plus , 2) / std::pow(gamma_m, 2) ) / 2.0 
+                        - std::log1p( std::pow( -1.0 + s_minus, 2) / std::pow(gamma_m, 2) ) / 2.0 
+                        + std::log(s_minus) - std::log(s_plus) )
+                        * ( 2.0 * ( t_minus - t_plus ) + ( std::log1p(-t_minus) - std::log1p(-t_plus) ) ); 
 
-                j_st += std::log1p(s_minus + t_minus)
-                    *(std::log1p(std::pow(-1.0 + s_minus, 2)/std::pow(gamma_m, 2)) 
-                        - std::log1p(std::pow(2.0 + t_minus, 2)/std::pow(gamma_m, 2)) 
-                        - 2.0*(std::log(s_minus) - std::log(std::fabs(1.0 + t_minus))));
+                j_st += std::log1p( s_minus + t_minus )
+                        * ( std::log1p( std::pow( -1.0 + s_minus , 2) / std::pow(gamma_m, 2) ) 
+                        - std::log1p( std::pow( 2.0 + t_minus , 2) / std::pow(gamma_m, 2) ) 
+                        - 2.0 * ( std::log(s_minus) - std::log( std::fabs( 1.0 + t_minus ) ) ) );
 
-                j_st -= std::log1p(s_plus + t_minus)
-                    *(std::log1p(std::pow(-1.0 + s_plus, 2)/std::pow(gamma_m, 2)) 
-                            - std::log1p(std::pow(2.0 + t_minus, 2)/std::pow(gamma_m, 2)) 
-                            - 2.0*(std::log(s_plus) - std::log(std::fabs(1.0 + t_minus))));
+                j_st -= std::log1p( s_plus + t_minus )
+                    * ( std::log1p( std::pow( -1.0 + s_plus , 2) / std::pow(gamma_m, 2) ) 
+                            - std::log1p( std::pow( 2.0 + t_minus , 2) / std::pow(gamma_m, 2) ) 
+                            - 2.0 * ( std::log(s_plus) - std::log( std::fabs( 1.0 + t_minus ) ) ) );
 
-                j_st -= std::log1p(s_minus + t_plus)
-                    *(std::log1p(std::pow(-1.0 + s_minus, 2)/std::pow(gamma_m, 2)) 
-                            - std::log1p(std::pow(2.0 + t_plus, 2)/std::pow(gamma_m, 2)) 
-                            - 2.0*(std::log(s_minus) - std::log(std::fabs(1.0 + t_plus))));
+                j_st -= std::log1p( s_minus + t_plus )
+                        * ( std::log1p( std::pow( -1.0 + s_minus , 2) / std::pow(gamma_m, 2) ) 
+                            - std::log1p( std::pow( 2.0 + t_plus , 2) / std::pow(gamma_m, 2) ) 
+                            - 2.0 * ( std::log(s_minus) - std::log( std::fabs( 1.0 + t_plus ) ) ) );
 
-                j_st += std::log1p(s_plus + t_plus)
-                    *(std::log1p(std::pow(-1.0 + s_plus, 2)/std::pow(gamma_m, 2)) 
-                            - std::log1p(std::pow(2.0 + t_plus, 2)/std::pow(gamma_m, 2)) 
-                            - 2.0*(std::log(s_plus) - std::log(std::fabs(1.0 + t_plus))));
+                j_st += std::log1p( s_plus + t_plus )
+                    * ( std::log1p( std::pow( -1.0 + s_plus , 2) / std::pow(gamma_m, 2) ) 
+                            - std::log1p( std::pow( 2.0 + t_plus , 2) / std::pow(gamma_m, 2) ) 
+                            - 2.0 * ( std::log(s_plus) - std::log( std::fabs( 1.0 + t_plus ) ) ) );
 
-            j_st *= std::pow(g, 4) / (32*M_PI*(1.0 + std::pow(gamma_m, 2))*std::pow(m_phi, 4)); 
+            j_st *= std::pow(g, 4) 
+                / ( 32.0 * M_PI * ( 1.0 + std::pow(gamma_m, 2) ) 
+                         * std::pow(m_phi, 4) ); 
 
         } else{
-            j_st = (2*gamma_m*std::arg(-1.0 + 1i*gamma_m + s_minus) 
-                      - 2.0*gamma_m*std::arg(-1.0 + 1i*gamma_m + s_plus)
-                      + 2.0*std::log(s_minus) - 2.0*std::log(s_plus)
-                      + std::log1p(std::pow(-1.0 + s_plus, 2)/std::pow(gamma_m, 2)) 
-                      - std::log1p(std::pow(-1.0 + s_minus, 2)/std::pow(gamma_m, 2)) )*
-                     (t_minus - t_plus + std::log1p(-t_minus) - std::log1p(-t_plus));
-            j_st *= std::pow(g, 4) / (32.0*M_PI*(1.0 + std::pow(gamma_m, 2))*std::pow(m_phi, 4));
+            j_st = ( 2.0 * gamma_m * std::arg( -1.0 + 1i * gamma_m + s_minus ) 
+                      - 2.0 * gamma_m * std::arg( -1.0 + 1i * gamma_m + s_plus )
+                      + 2.0 * std::log(s_minus) - 2.0 * std::log(s_plus)
+                      + std::log1p( std::pow( -1.0 + s_plus , 2) / std::pow(gamma_m, 2) ) 
+                      - std::log1p( std::pow( -1.0 + s_minus , 2) / std::pow(gamma_m, 2) ) )
+                * ( t_minus - t_plus + std::log1p(-t_minus) - std::log1p(-t_plus) );
+
+            j_st *= std::pow(g, 4) 
+                / ( 32.0 * M_PI * ( 1.0 + std::pow(gamma_m, 2) ) 
+                        * std::pow(m_phi, 4) );
         }
+
         j_st *= constants::PMNS_sq[flavour][k];
 
-        return std::pow(m_phi, 4) / (2*m_k) * j_st;
+        return std::pow(m_phi, 4) / ( 2.0 * m_k ) * j_st;
 
     }
 

@@ -146,4 +146,16 @@ namespace utils {
 
     }
 
+    std::complex<double> dilogdiff(std::complex<double> x, std::complex<double> y) {
+        if(std::abs(x - y) < 1e-5){
+            std::complex<double> z = std::abs(x) > std::abs(y) ? x : y;
+            std::complex<double> delta = x - y;
+
+            return -std::log( 1.0 - z ) * delta / z;
+        }
+        else {
+            return dilog(x) - dilog(y);
+        }
+    }
+
 } //utils

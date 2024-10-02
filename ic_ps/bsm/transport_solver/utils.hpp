@@ -35,7 +35,11 @@ namespace utils{
 
     void handle_gsl_error(int status);
 
+    std::complex<double> dilogdiff(std::complex<double> x, std::complex<double> y);
+
     constexpr double GeV2_to_cm2 = std::pow(1.97e-14, 2);
+
+    constexpr double cm3_to_GeV3 = std::pow(1.97e-14, -3);
 }
 
 #endif // UTILS_H_
