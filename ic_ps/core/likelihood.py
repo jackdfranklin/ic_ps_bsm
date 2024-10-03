@@ -21,7 +21,7 @@ import ic_ps.core.dataset as dataset
 
 class Likelihood:
 
-    def __init__(self, src_ra, src_dec, directory, flux_obj):
+    def __init__(self, src_ra, src_dec, directory, bkg_vals_file, flux_obj):
         self.src_ra = src_ra
         self.src_dec = src_dec
         
@@ -45,9 +45,9 @@ class Likelihood:
         self.log10E_max = np.max(self.dataset.events_log10Ereco)
 
         #If pre-calculated background pd values don't exist, calculate them
-        if(os.path.isfile(directory+'/bkg_pd_vals.pkl')):
+        if(os.path.isfile(bkg_vals_file)):
         #Load pre-calculated background pd values from pickle file
-            with open(directory+'/bkg_pd_vals.pkl', 'rb') as file:
+            with open(bkg_vals_file, 'rb') as file:
                 self.bkg_pdf_vals = pickle.load(file)
         else:
 
@@ -60,7 +60,7 @@ class Likelihood:
                 #Add small tolerance to avoid dividing by zero
                 self.bkg_pdf_vals = np.where(self.bkg_pdf_vals<1e-20, 1e-20, self.bkg_pdf_vals)
 
-                with open(directory+'bkg_pd_vals.pkl', 'wb') as file:
+                with open(bkg_vals_file, 'wb') as file:
                     pickle.dump(self.bkg_pdf_vals, file)
 
         #source pdfs 
