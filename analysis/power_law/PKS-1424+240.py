@@ -15,7 +15,7 @@ parameters = ['ns', 'gamma']
 
 pl_flux = flux.Flux()
 
-llh_pl = llh.Likelihood(40.667, -0.0069, "../../datasets/icecube_10year_ps", "NGC_bkg.pkl", pl_flux)
+llh_pl = llh.Likelihood(216.76, 23.8, "../../datasets/icecube_10year_ps", "PKS_bkg.pkl", pl_flux)
 
 result, fval = llh_pl.fit()
 
