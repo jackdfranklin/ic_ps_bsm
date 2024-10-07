@@ -11,11 +11,10 @@ typedef std::function<Eigen::VectorXd(mass_state, Eigen::VectorXd, std::array<do
 
 typedef std::function<Eigen::MatrixXd(mass_state, mass_state, Eigen::VectorXd, std::array<double, 3>)> Gain_term ;
 
-Eigen::VectorXd transport_flux_z(Eigen::VectorXd energy_nodes, 
-                                 double gamma, double zmax, 
+Eigen::MatrixXd transport_flux_z(Eigen::VectorXd energy_nodes, 
+                                 Eigen::VectorXd gamma_grid, double zmax, 
                                  std::array<double,3> neutrino_masses_GeV, 
                                  double relic_density_cm, 
-                                 const Loss_term &K, const Gain_term &I, 
-                                 int steps); 
+                                 const Loss_term &K, const Gain_term &I); 
 
 #endif

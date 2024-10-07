@@ -49,7 +49,7 @@ class DataSet:
             self.N_tot += events.shape[0]
 
 
-        psi_cut_mask = events_psi <= 15 #Choose only events within 15 degrees of NGC1068
+        psi_cut_mask = events_psi <= 15 #Choose only events within 15 degrees of source
 
         self.events_log10Ereco = events_log10Ereco[psi_cut_mask]
         self.events_dec = events_dec[psi_cut_mask]

@@ -128,16 +128,8 @@ namespace SI {
             J_ji += J_tu(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
                          t_plus, t_minus);
 
-            double temp = J_st(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
+            J_ji += J_st(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
                         t_plus, t_minus);
-
-            if(temp < 0.0){
-
-                J_st(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
-                        t_plus, t_minus);
-            }
-
-            J_ji += temp;
 
             J_ji += J_su(k, flavour, g, m_phi, majorana, decay_width, mass.at(k), 
                          t_plus, t_minus);
