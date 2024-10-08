@@ -3,6 +3,7 @@
 #include <complex>
 #include <iostream>
 #include <stdio.h>
+#include <chrono>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -25,6 +26,8 @@ Eigen::MatrixXd transport_flux(Eigen::VectorXd energy_nodes,
                                double relic_density_cm, 
                                const Loss_term &K, const Gain_term &I, 
                                int steps) {
+
+    const auto start{std::chrono::steady_clock::now()};
 	
     size_t N_nodes = energy_nodes.size();
     double distance_cm = 3.086e+24 * distance_Mpc;
@@ -60,6 +63,11 @@ Eigen::MatrixXd transport_flux(Eigen::VectorXd energy_nodes,
     Ks.at(one) = K(one,   energy_nodes, neutrino_masses_GeV);
     Ks.at(two) = K(two,   energy_nodes, neutrino_masses_GeV);
     Ks.at(three) = K(three, energy_nodes, neutrino_masses_GeV);
+
+    const auto end{std::chrono::steady_clock::now()};
+    const std::chrono::duration<double> elapsed_seconds{end - start};
+
+    //std::cout<<"Initialisation complete after "<<elapsed_seconds<<" s"<<std::endl;
 
     double norm = 1.0/3.0;
     std::array<Eigen::VectorXd, 3> fluxes;
