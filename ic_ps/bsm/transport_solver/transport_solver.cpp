@@ -26,161 +26,136 @@ Eigen::MatrixXd transport_flux(Eigen::VectorXd energy_nodes,
                                const Loss_term &K, const Gain_term &I, 
                                int steps) {
 	
-	size_t N_nodes = energy_nodes.size();
-	double distance_cm = 3.086e+24 * distance_Mpc;
-	double delta_r = distance_cm/steps;
+    size_t N_nodes = energy_nodes.size();
+    double distance_cm = 3.086e+24 * distance_Mpc;
+    double delta_r = distance_cm/steps;
 
-	Eigen::VectorXd deltaE_GeV = energy_bin_widths(energy_nodes);
+    Eigen::VectorXd deltaE_GeV = energy_bin_widths(energy_nodes);
+    double deltalog10E = std::log10(energy_nodes.head(2)(1)) 
+        - std::log10(energy_nodes.head(1)(0));
 
-	Eigen::MatrixXd identity = Eigen::MatrixXd::Identity(N_nodes, N_nodes);
+    std::array< std::array<Eigen::MatrixXd, 3>, 3> Is;
+    Is.at(one).at(one) =  I(one, one, energy_nodes, 
+                            neutrino_masses_GeV);
+    Is.at(two).at(one) =  I( two, one, energy_nodes, 
+                            neutrino_masses_GeV);
+    Is.at(three).at(one) =  I(three, one, energy_nodes, 
+                            neutrino_masses_GeV);
 
-	const Eigen::MatrixXd I_11 =  I(one, one, energy_nodes, 
-                                        neutrino_masses_GeV).triangularView<Eigen::Upper>();
-        //std::cout<<I_11<<std::endl;
-	const Eigen::MatrixXd I_21 =  I( two, one, energy_nodes, 
-                                        neutrino_masses_GeV).triangularView<Eigen::Upper>();
-	const Eigen::MatrixXd I_31 =  I(three, one, energy_nodes, 
-                                        neutrino_masses_GeV).triangularView<Eigen::Upper>();
+    Is.at(one).at(two) =  I(one, two, energy_nodes, 
+            neutrino_masses_GeV);
+    Is.at(two).at(two) =  I(two, two, energy_nodes, 
+            neutrino_masses_GeV);
+    Is.at(three).at(two) =  I(three, two, energy_nodes, 
+            neutrino_masses_GeV);
 
-	const Eigen::MatrixXd I_12 =  I(one, two, energy_nodes, 
-                                        neutrino_masses_GeV).triangularView<Eigen::Upper>();
-	const Eigen::MatrixXd I_22 =  I(two, two, energy_nodes, 
-                                        neutrino_masses_GeV).triangularView<Eigen::Upper>();
-	const Eigen::MatrixXd I_32 =  I(three, two, energy_nodes, 
-                                        neutrino_masses_GeV).triangularView<Eigen::Upper>();
+    Is.at(one).at(three) =  I(one, three, energy_nodes, 
+            neutrino_masses_GeV);
+    Is.at(two).at(three) =  I(two, three, energy_nodes, 
+            neutrino_masses_GeV);
+    Is.at(three).at(three) =  I(three, three, energy_nodes, 
+            neutrino_masses_GeV);
 
-	const Eigen::MatrixXd I_13 =  I(one, three, energy_nodes, 
-                                        neutrino_masses_GeV).triangularView<Eigen::Upper>();
-	const Eigen::MatrixXd I_23 =  I(two, three, energy_nodes, 
-                                        neutrino_masses_GeV).triangularView<Eigen::Upper>();
-	const Eigen::MatrixXd I_33 =  I(three, three, energy_nodes, 
-                                        neutrino_masses_GeV).triangularView<Eigen::Upper>();
+    std::array<Eigen::VectorXd, 3> Ks;
+    Ks.at(one) = K(one,   energy_nodes, neutrino_masses_GeV);
+    Ks.at(two) = K(two,   energy_nodes, neutrino_masses_GeV);
+    Ks.at(three) = K(three, energy_nodes, neutrino_masses_GeV);
 
-	const Eigen::VectorXd K_1 = K(one,   energy_nodes, neutrino_masses_GeV);
-        //std::cout<<K_1<<std::endl;
-	const Eigen::VectorXd K_2 = K(two,   energy_nodes, neutrino_masses_GeV);
-	const Eigen::VectorXd K_3 = K(three, energy_nodes, neutrino_masses_GeV);
+    double norm = 1.0/3.0;
+    std::array<Eigen::VectorXd, 3> fluxes;
 
-	Eigen::MatrixXd D_1 = ( 1.0 / ( relic_density_cm * delta_r ) )
-                              * deltaE_GeV.asDiagonal();
-	D_1 += 0.5 * K_1.asDiagonal();
-	D_1 -= I_11;
+    Eigen::MatrixXd final_muon_fluxes(energy_nodes.size(), gamma_grid.size());
 
-	Eigen::MatrixXd D_2 = ( 1.0 / ( relic_density_cm * delta_r ) )
-                              * deltaE_GeV.asDiagonal();
-	D_2 += 0.5 * K_2.asDiagonal();
-	D_2 -= I_22;
+    for(auto i = 0; i < gamma_grid.size(); ++i){
 
-	Eigen::MatrixXd D_2_inv = D_2.inverse();
+        double gamma = gamma_grid(i);
 
-	Eigen::MatrixXd D_3 = ( 1.0 / ( relic_density_cm * delta_r ) )
-                              * deltaE_GeV.asDiagonal();
-	D_3 += 0.5 * K_3.asDiagonal();
-	D_3 -= I_33;
+        fluxes.at(one) = norm 
+            * ( 2.0 * constants::PMNS_sq[mu][one] + constants::PMNS_sq[e][one])
+            * initial_flux(energy_nodes, 1000.0, gamma).array() * deltaE_GeV.array();
 
-	Eigen::MatrixXd sigma_1 = ( 1.0 / ( relic_density_cm * delta_r ) )
-                                  * deltaE_GeV.asDiagonal();
-	sigma_1 -= 0.5 * K_1.asDiagonal();
+        fluxes.at(two) = norm 
+            * ( 2.0 * constants::PMNS_sq[mu][two] 
+                    + constants::PMNS_sq[e][two])
+            * initial_flux(energy_nodes, 1000.0, gamma).array() * deltaE_GeV.array();
 
-	Eigen::MatrixXd sigma_2 = ( 1.0 / ( relic_density_cm * delta_r ) )
-                                  * deltaE_GeV.asDiagonal();
-	sigma_2 -= 0.5 * K_2.asDiagonal();
+        fluxes.at(three) = norm 
+            * ( 2.0 * constants::PMNS_sq[mu][three] 
+                    + constants::PMNS_sq[e][three])
+            * initial_flux(energy_nodes, 1000.0, gamma).array() * deltaE_GeV.array();
 
-	Eigen::MatrixXd sigma_3 = ( 1.0 / ( relic_density_cm * delta_r ) )
-                                  * deltaE_GeV.asDiagonal();
-	sigma_3 -= 0.5 * K_3.asDiagonal();
+        for (int step = 0; step < steps; step++){
 
-	Eigen::MatrixXd G_1 = (D_1 - I_21 * D_2_inv * I_12).triangularView<Eigen::Upper>();
-	Eigen::MatrixXd G_3 = (D_3 - I_23 * D_2_inv * I_32).triangularView<Eigen::Upper>();
-	Eigen::MatrixXd G_3_inv = G_3.inverse().triangularView<Eigen::Upper>();
+            for( auto m = N_nodes - 1; m > 0; m-- ) {
 
-	Eigen::MatrixXd d_3 = (( I_23 * D_2_inv * I_32 + I_31 ) * G_3_inv).triangularView<Eigen::Upper>();
-	Eigen::MatrixXd d_2 = (I_21 * D_2_inv + d_3 * I_32 * D_2_inv).triangularView<Eigen::Upper>();
+                Eigen::Matrix3d M = Eigen::Matrix3d::Zero();
+                Eigen::Vector3d rhs = Eigen::Vector3d::Zero();
 
-	Eigen::MatrixXd c_3 = (I_13 + I_23 * D_2_inv * I_12).triangularView<Eigen::Upper>();
+                double deltaE_m = deltaE_GeV(m);
 
-	Eigen::MatrixXd M_1 = G_1 
-                            - ( I_31 + I_21 * D_2_inv * I_32 ) * G_3_inv * c_3;
-	Eigen::MatrixXd M_1_inv = M_1.inverse().triangularView<Eigen::Upper>();
+                double E_m = energy_nodes(m);
 
+                double E_m_minus_half = 
+                    std::pow(10, std::log10(E_m) 
+                            - 0.5 * deltalog10E );
+                double E_m_plus_half = 
+                    std::pow(10, std::log10(E_m) + 0.5 * deltalog10E );
 
-	double norm = 1.0/3.0;
+                for ( mass_state i: {one, two, three} ) {
 
-        Eigen::VectorXd current_1(N_nodes), current_2(N_nodes), current_3(N_nodes);
-        Eigen::VectorXd del_1(N_nodes), del_2(N_nodes), del_3(N_nodes);
-        Eigen::VectorXd b_1(N_nodes), b_3(N_nodes);
-        Eigen::VectorXd new_1(N_nodes), new_2(N_nodes), new_3(N_nodes);
+                    M(i, i) += 1.0 / delta_r; 
+                    // Loss term from cross section
+                    M(i, i) += relic_density_cm * Ks.at(i)(m) / deltaE_m;
 
-        Eigen::MatrixXd final_muon_fluxes(N_nodes, gamma_grid.size());
+                    // Gain term from up/down scattering
+                    for ( mass_state j: {one, two, three} ) {
+                        M(j, i) -= relic_density_cm * Is.at(j).at(i)(m, m) / deltaE_m;
+                    }
 
-        for(auto i = 0; i < gamma_grid.size(); ++i){
+                    rhs(i) += ( 1.0 / delta_r ) * fluxes.at(i)(m);
 
-            double gamma = gamma_grid(i);
+                    if ( m != N_nodes - 1 ) {
+                        double E_m_plus_1 = energy_nodes(m + 1);
 
-            current_1 = norm 
-                * initial_flux(energy_nodes, 1000.0, gamma)
-                * ( 2.0 * constants::PMNS_sq[mu][one] 
-                        + constants::PMNS_sq[e][one]);
+                        for ( mass_state j: {one, two, three} ) {
 
-            current_2 = norm 
-                * initial_flux(energy_nodes, 1000.0, gamma) 
-                * ( 2.0 * constants::PMNS_sq[mu][two] 
-                        + constants::PMNS_sq[e][two]) ;
+                            // Gain term from up/down scattering
+                            rhs(i) += relic_density_cm 
+                                * ( Is.at(j).at(i).row(m).tail(N_nodes - ( m + 1 ) )
+                                    .transpose().array() 
+                                    * fluxes.at(j).tail(N_nodes - m - 1).array() 
+                                    / deltaE_GeV.tail(N_nodes - m - 1).array() )
+                                .sum();
+                        }
 
-            current_3 = norm 
-                * initial_flux(energy_nodes, 1000.0, gamma)
-                * ( 2.0 * constants::PMNS_sq[mu][three] 
-                        + constants::PMNS_sq[e][three]);
+                    }
+                }
 
+                Eigen::Vector3d sol = M.fullPivLu().solve(rhs);
 
-            for (int step = 0; step < steps; step++){
-
-                    del_1 = sigma_1 * current_1 
-                                             + I_11 * current_1 
-                                             + I_21 * current_2 
-                                             + I_31 * current_3;
-
-                    del_2 = sigma_2 * current_2 
-                                             + I_12 * current_1 
-                                             + I_22 * current_2 
-                                             + I_32 * current_3;
-
-                    del_3 = sigma_3 * current_3 
-                                            + I_13 * current_1 
-                                            + I_23 * current_2 
-                                            + I_33 * current_3;
-                                                                                                       
-                    b_1 = del_1 + d_2 * del_2 + d_3 * del_3;
-                    b_3 = del_3 + I_23 * D_2_inv * del_2;
-                    
-                    new_1 = 
-                        M_1.triangularView<Eigen::Upper>().solve(b_1);
-                    new_3 = 
-                        G_3.triangularView<Eigen::Upper>().solve(b_3 
-                                                                 + c_3 * current_1);
-                    new_2 = 
-                        D_2.triangularView<Eigen::Upper>().solve(del_2 
-                                                                 + I_12 * new_1 
-                                                                 + I_32 * new_3);
-
-                    fix_values(deltaE_GeV, new_1);
-                    fix_values(deltaE_GeV, new_2);
-                    fix_values(deltaE_GeV, new_3);
-
-                    std::swap(new_1, current_1);
-                    std::swap(new_2, current_2);
-                    std::swap(new_3, current_3);
+                fluxes.at(one)(m) = sol(one);
+                fluxes.at(two)(m) = sol(two);
+                fluxes.at(three)(m) = sol(three);
 
             }
 
-            final_muon_fluxes.col(i) = 
-                (   constants::PMNS_sq[mu][one]   * current_1
-                  + constants::PMNS_sq[mu][three] * current_2
-                  + constants::PMNS_sq[mu][two]   * current_3 );
-            
+
+            for ( mass_state i: {one, two, three} ) {
+                fix_values(deltaE_GeV, fluxes.at(i));
+            }
+
         }
 
-        return final_muon_fluxes;
+        final_muon_fluxes.col(i) = 
+            (   constants::PMNS_sq[mu][one]   * fluxes.at(one)  
+              + constants::PMNS_sq[mu][three] * fluxes.at(two) 
+              + constants::PMNS_sq[mu][two]   * fluxes.at(three) ).array()
+            / deltaE_GeV.array();
+
+
+    }
+
+    return final_muon_fluxes;
 }
 
 Eigen::MatrixXd transport_flux_SM(Eigen::VectorXd energy_nodes,
