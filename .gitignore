@@ -78,12 +78,12 @@ datasets/
 .prof
 
 # Output files
-.npy
-.h5
-.png
-.jpg
-.pdf
-.svg
-.csv
-.txt
-.pkl
+*.npy
+*.h5
+*.png
+*.jpg
+*.pdf
+*.svg
+*.csv
+*.txt
+*.pkl

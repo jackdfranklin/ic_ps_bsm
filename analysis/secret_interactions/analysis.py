@@ -138,6 +138,7 @@ def create_si_analysis(
         neutrino_masses_GeV,
         relic_density_cm_3, 
         steps,
+        energy_bins = 500,
         refplflux_Phi0=1,
         ns_seed=10.0,
         ns_min=0.,
@@ -184,6 +185,7 @@ def create_si_analysis(
             neutrino_masses_GeV = neutrino_masses_GeV,
             relic_density_cm_3 = relic_density_cm_3,
             steps = steps,
+            energy_bins = energy_bins,
             cfg = cfg,
             )
 
@@ -222,6 +224,7 @@ def create_si_z_analysis(
         m_phi_GeV,
         neutrino_masses_GeV,
         relic_density_cm_3, 
+        energy_bins = 500,
         refplflux_Phi0=1,
         ns_seed=10.0,
         ns_min=0.,
@@ -267,6 +270,7 @@ def create_si_z_analysis(
             m_phi_GeV = m_phi_GeV,
             neutrino_masses_GeV = neutrino_masses_GeV,
             relic_density_cm_3 = relic_density_cm_3,
+            energy_bins = energy_bins,
             cfg = cfg,
             )
 

@@ -239,7 +239,7 @@ Eigen::MatrixXd transport_flux_z(Eigen::VectorXd energy_nodes,
     const auto end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> elapsed_seconds{end - start};
 
-    std::cout<<"Initialisation complete after "<<elapsed_seconds<<" s"<<std::endl;
+    //std::cout<<"Initialisation complete after "<<elapsed_seconds<<" s"<<std::endl;
 
     double norm = 1.0/3.0;
     std::array<Eigen::VectorXd, 3> current_flux;

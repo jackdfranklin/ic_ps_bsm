@@ -71,6 +71,7 @@ class SIInteractionsFluxProfile(
             neutrino_masses_GeV,
             relic_density_cm_3,
             steps,
+            energy_bins=500,
             energy_unit=None,
             **kwargs):
         """
@@ -100,7 +101,7 @@ class SIInteractionsFluxProfile(
         self._g = g
         self._m_phi_GeV = m_phi_GeV
 
-        self._E_vals = np.logspace(1,10,500)
+        self._E_vals = np.logspace(1,10,energy_bins)
 
         self._interpolated_flux_dict = {}
         self._integrated_flux_dict = {}
@@ -219,6 +220,7 @@ class SIInteractionsRedshiftedFluxProfile(
             m_phi_GeV,
             neutrino_masses_GeV,
             relic_density_cm_3,
+            energy_bins = 500,
             energy_unit=None,
             **kwargs):
         """
@@ -248,7 +250,7 @@ class SIInteractionsRedshiftedFluxProfile(
         self._g = g
         self._m_phi_GeV = m_phi_GeV
 
-        self._E_vals = np.logspace(1,10,500)
+        self._E_vals = np.logspace(1,10,energy_bins)
 
         self._interpolated_flux_dict = {}
         self._integrated_flux_dict = {}

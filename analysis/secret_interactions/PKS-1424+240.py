@@ -28,7 +28,7 @@ from skyllh.core.flux_model import (
 
 alpha_PKS = 216.76
 dec_PKS = 23.8
-z_PKS = 0.28
+z_PKS = 0.6
 
 source = PointLikeSource(ra=np.deg2rad(alpha_PKS), dec=np.deg2rad(dec_PKS))
 
@@ -66,8 +66,8 @@ neutrino_masses_GeV = [m1_GeV, m2_GeV, m3_GeV]
 
 relic_density_cm_3 = 56
 
-m_phi_GeV_vals = np.logspace(-1, 1, 4)*1e-3
-g_vals = np.logspace(np.log10(5e-2), np.log10(0.9), 4)
+m_phi_GeV_vals = np.logspace(-1, 2, 20)*1e-3
+g_vals = np.logspace(-2, np.log10(0.9), 20)
 
 M, G = np.meshgrid(m_phi_GeV_vals, g_vals)
 
@@ -97,7 +97,7 @@ def model_logllh(index):
     new_rss = RandomStateService(seed=1)
 
     (log_lambda_max, fitparam_values, status) = si_analysis.llhratio.maximize(new_rss)
-    print(fitparam_values)
+    #print(fitparam_values)
     return log_lambda_max
 
 si_logllh = []
@@ -111,7 +111,7 @@ end = time.perf_counter()
 print("Time taken = " + str(end - start) + " s")
 
 TS = -2 * (np.array(si_logllh) - pl_log_lambda_max)
-print(TS)
+#print(TS)
 
 result_df = pd.DataFrame(data={"M_phi": M, "g":G, "-2 logllh": TS})
-result_df.to_csv("results/PKS_logllh.csv")
+result_df.to_csv("/tmp/PKS_logllh.csv")

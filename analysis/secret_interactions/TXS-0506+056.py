@@ -113,5 +113,5 @@ print("Time taken = " + str(end - start) + " s")
 TS = -2 * (np.array(si_logllh) - pl_log_lambda_max)
 print(TS)
 
-result_df = pd.DataFrame(data={"M_phi": M, "g":G, "-2 logllh": TS})
-result_df.to_csv("results/TXS_logllh.csv")
+#result_df = pd.DataFrame(data={"M_phi": M, "g":G, "-2 logllh": TS})
+#result_df.to_csv("results/TXS_logllh.csv")
