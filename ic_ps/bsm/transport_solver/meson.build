@@ -1,6 +1,6 @@
-eigen_dep = dependency('eigen3', version : '>=3.2.7')
+eigen_dep = dependency('eigen3', version : '>=3.2.7', fallback: ['eigen', 'eigen_dep'])
 
-gsl_dep = dependency('gsl', version : '>=2.7')
+gsl_dep = dependency('gsl', version : '>=2.6')
 
 py.extension_module('transport_solver', 
     [
