@@ -1,6 +1,8 @@
 python_sources = [
   '__init__.py',
   'analyses.py',
+  'detsigyield.py',
+  'signalpdf.py',
   'skyllh_helpers.py',
 ]
 

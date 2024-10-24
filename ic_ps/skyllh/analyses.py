@@ -11,7 +11,7 @@ from skyllh.analyses.i3.publicdata_ps.backgroundpdf import (
 #from skyllh.analyses.i3.publicdata_ps.detsigyield import (
 #    PDSingleParamFluxPointLikeSourceI3DetSigYieldBuilder,
 #)
-from detsigyield import (
+from ic_ps.skyllh.detsigyield import (
     PDSingleParamFluxPointLikeSourceI3DetSigYieldBuilder,
 )
 from skyllh.analyses.i3.publicdata_ps.pdfratio import (
@@ -20,7 +20,7 @@ from skyllh.analyses.i3.publicdata_ps.pdfratio import (
 from skyllh.analyses.i3.publicdata_ps.signal_generator import (
     PDDatasetSignalGenerator,
 )
-from skyllh.analyses.i3.publicdata_ps.signalpdf import (
+from ic_ps.skyllh.signalpdf import (
     PDSignalEnergyPDFSet,
 )
 from skyllh.analyses.i3.publicdata_ps.utils import (
@@ -131,7 +131,6 @@ def create_si_analysis(
         cfg,
         datasets,
         source,
-        E0,
         distance_Mpc,
         g,
         m_phi_GeV,
@@ -139,6 +138,7 @@ def create_si_analysis(
         relic_density_cm_3, 
         steps,
         energy_bins = 500,
+        E0 = 1e3,
         refplflux_Phi0=1,
         ns_seed=10.0,
         ns_min=0.,
@@ -160,7 +160,7 @@ def create_si_analysis(
         logger_name=None,
         ):
 
-    from skyllh_helpers import SIInteractionsFluxProfile
+    from ic_ps.skyllh.skyllh_helpers import SIInteractionsFluxProfile
 
     # Define the fit parameter gamma.
     param_gamma = Parameter(
@@ -218,13 +218,13 @@ def create_si_z_analysis(
         cfg,
         datasets,
         source,
-        E0,
         z,
         g,
         m_phi_GeV,
         neutrino_masses_GeV,
         relic_density_cm_3, 
         energy_bins = 500,
+        E0=1e3,
         refplflux_Phi0=1,
         ns_seed=10.0,
         ns_min=0.,
@@ -246,7 +246,7 @@ def create_si_z_analysis(
         logger_name=None,
         ):
 
-    from skyllh_helpers import SIInteractionsRedshiftedFluxProfile
+    from ic_ps.skyllh.skyllh_helpers import SIInteractionsRedshiftedFluxProfile
 
     # Define the fit parameter gamma.
     param_gamma = Parameter(
@@ -303,12 +303,12 @@ def create_sm_analysis(
         cfg,
         datasets,
         source,
-        E0,
         distance_Mpc,
         neutrino_masses_GeV,
         relic_density_cm_3, 
         steps,
         energy_bins = 500,
+        E0=1e3,
         refplflux_Phi0=1,
         ns_seed=10.0,
         ns_min=0.,
@@ -330,7 +330,7 @@ def create_sm_analysis(
         logger_name=None,
         ):
 
-    from skyllh_helpers import SMInteractionsFluxProfile
+    from ic_ps.skyllh.skyllh_helpers import SMInteractionsFluxProfile
 
     # Define the fit parameter gamma.
     param_gamma = Parameter(
@@ -386,11 +386,11 @@ def create_sm_z_analysis(
         cfg,
         datasets,
         source,
-        E0,
         z,
         neutrino_masses_GeV,
         relic_density_cm_3, 
         energy_bins = 500,
+        E0=1e3,
         refplflux_Phi0=1,
         ns_seed=10.0,
         ns_min=0.,
@@ -412,7 +412,7 @@ def create_sm_z_analysis(
         logger_name=None,
         ):
 
-    from skyllh_helpers import SMInteractionsRedshiftedFluxProfile
+    from ic_ps.skyllh.skyllh_helpers import SMInteractionsRedshiftedFluxProfile
 
     # Define the fit parameter gamma.
     param_gamma = Parameter(
@@ -677,11 +677,8 @@ def create_analysis(
     # Add the data sets to the analysis.
     pbar = ProgressBar(len(datasets), parent=ppbar).start()
     for (ds_idx, ds) in enumerate(datasets):
-        data = ds.load_and_prepare_data(
-            keep_fields=keep_data_fields,
-            dtc_dict=dtc_dict,
-            dtc_except_fields=dtc_except_fields,
-            tl=tl)
+
+        data = ds.load_and_prepare_data()
 
         sin_dec_binning = ds.get_binning_definition('sin_dec')
         log_energy_binning = ds.get_binning_definition('log_energy')

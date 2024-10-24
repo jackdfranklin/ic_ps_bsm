@@ -259,7 +259,7 @@ PYBIND11_MODULE(transport_solver, mod) {
 
 	mod.doc() = "Neutrino flux transport equation solver";
 
-	mod.def("transport_flux", &transport_flux_SM, 
+	mod.def("transport_flux_SM", &transport_flux_SM, 
                 "Module for solving the propagation of a neutrino flux from a  \
                  point source through space");
 
