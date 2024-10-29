@@ -110,7 +110,7 @@ class ScatteredPLFluxProfile(
         self._Nbins = energy_bins
         self._deltalog10E = (self._l10Emax - self._l10Emin)/self._Nbins
 
-        self._E_vals = np.logspace(1,10,energy_bins)
+        self._E_vals = np.logspace(1.5,10.5,energy_bins)
 
         self._E_lower = np.power(10, np.log10(self._E_vals) - 0.5*self._deltalog10E)
         self._E_upper = np.power(10, np.log10(self._E_vals) + 0.5*self._deltalog10E)

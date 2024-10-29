@@ -93,13 +93,17 @@ class PDSignalEnergyPDF(
                 vmax=self.log10_reco_e_max))
 
         # Check integrity.
-        integral = integrate.quad(
-            self.f_e_spl.evaluate,
-            self.log10_reco_e_min,
-            self.log10_reco_e_max,
-            limit=200,
-            full_output=1
-        )[0] / self.f_e_spl.norm
+        if self.f_e_spl.norm != 0.0:
+            integral = integrate.quad(
+                self.f_e_spl.evaluate,
+                self.log10_reco_e_min,
+                self.log10_reco_e_max,
+                limit=200,
+                full_output=1
+            )[0] / self.f_e_spl.norm
+        else:
+            integral = 1.0
+
         if not np.isclose(integral, 1):
             raise ValueError(
                 'The integral over log10_reco_e of the energy term must be '
@@ -360,8 +364,7 @@ class PDSignalEnergyPDFSet(
 
             if not np.isclose(np.sum(flux_prob), 1):
                 self._logger.warn(
-                    'The sum of the flux probabilities is not unity! It is '
-                    '{}. The flux_norm is {}'.format(np.sum(flux_prob), flux_norm))
+                    'The sum of the flux probabilities is not unity!')
 
             self._logger.debug(
                 'flux_prob = {}, sum = {}'.format(

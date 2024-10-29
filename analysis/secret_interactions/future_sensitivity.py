@@ -6,7 +6,6 @@ from copy import deepcopy
 from functools import partial
 
 import numpy as np
-from matplotlib import pyplot as plt
 import scipy.stats
 import pandas as pd
 import h5py
@@ -136,30 +135,7 @@ def perform_pl_analysis(source, dataset_collection, args, cfg):
 
     ts_exp = np.mean(ts_vals)
 
-    print(np.mean(gamma_vals))
-
     return (pl_analysis, pl_fitparam_values, pl_TS, ts_exp)
-
-def create_si_analysis_wrapper(
-        g,
-        m_phi_GeV,
-        cfg,
-        datasets,
-        source,
-        distance_Mpc,
-        neutrino_masses_GeV,
-        relic_density_cm_3, 
-        steps):
-
-    return create_si_analysis(cfg= cfg,
-                              datasets= datasets,
-                              source= source,
-                              distance_Mpc= distance_Mpc,
-                              g= g,
-                              m_phi_GeV= m_phi_GeV,
-                              neutrino_masses_GeV= neutrino_masses_GeV,
-                              relic_density_cm_3= relic_density_cm_3, 
-                              steps= steps)
 
 if __name__ == "__main__":
 
@@ -183,10 +159,10 @@ if __name__ == "__main__":
 
     relic_density_cm_3 = 56
 
-    m_md = (-1, 2, 20)
+    m_md = (np.log10(0.5), 2, 20)
     m_phi_GeV_vals = np.logspace(m_md[0],m_md[1],m_md[2])*1e-3
 
-    g_md = (-3, 1, 20)
+    g_md = (-3, 0, 20)
     g_vals = np.logspace(g_md[0], g_md[1], g_md[2])
 
     M, G = np.meshgrid(m_phi_GeV_vals, g_vals)
@@ -194,80 +170,8 @@ if __name__ == "__main__":
     M = M.flatten()
     G = G.flatten()
 
-    alpha_NGC = 40.667
-    dec_NGC = -0.0069
-    NGCsource = PointLikeSource(ra=np.deg2rad(alpha_NGC), dec=np.deg2rad(dec_NGC))
-    distance_NGC = 14 #Mpc
 
-    NGC_partial = partial(create_si_analysis, cfg = cfg, 
-                          datasets=datasets, source=NGCsource, 
-                          distance_Mpc = distance_NGC, 
-                          neutrino_masses_GeV = neutrino_masses_GeV, 
-                          relic_density_cm_3 = relic_density_cm_3, steps=20)
-
-    alpha_PKS = 216.76
-    dec_PKS = 23.8
-    PKSsource = PointLikeSource(ra=np.deg2rad(alpha_PKS), dec=np.deg2rad(dec_PKS))
-    z_PKS = 0.6
-
-    PKS_partial = partial(create_si_z_analysis, cfg = cfg, 
-                          datasets=datasets, source=PKSsource, z = z_PKS,
-                          neutrino_masses_GeV = neutrino_masses_GeV, 
-                          relic_density_cm_3 = relic_density_cm_3)
-
-    alpha_TXS = 77.3582
-    dec_TXS = 5.69314
-    z_TXS = 0.45
-
-    TXSsource = PointLikeSource(ra=np.deg2rad(alpha_TXS), dec=np.deg2rad(dec_TXS))
-
-    TXS_partial = partial(create_si_z_analysis, cfg = cfg, 
-                          datasets=datasets, source=TXSsource, z = z_TXS,
-                          neutrino_masses_GeV = neutrino_masses_GeV, 
-                          relic_density_cm_3 = relic_density_cm_3)
-
-    def model_TS(index, n_s):
-
-        m_phi_GeV = M[index]
-        g = G[index]
-
-        #print("g = "+str(g))
-        #print("m_phi = "+str(m_phi_GeV*1e3)+" MeV")
-
-        si_analysis = create_si_analysis(cfg=cfg, datasets=datasets, source=NGCsource,
-                                           distance_Mpc = distance_NGC,
-                                           g = g,
-                                           m_phi_GeV = m_phi_GeV,
-                                           neutrino_masses_GeV = neutrino_masses_GeV,
-                                           relic_density_cm_3 = relic_density_cm_3,
-                                           steps = 20,
-                                           )
-
-        new_events_list = [data.exp for data in si_analysis.data_list]
-        si_analysis.initialize_trial(new_events_list)
-
-        new_rss = RandomStateService(seed=args.seed)
-
-        ts_vals = []
-        gamma_vals = []
-        ns_vals = []
-
-        for i in range(args.n_iter):
-
-            future_analysis = deepcopy(si_analysis)
-            data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
-            add_datasets(future_analysis, data_list)
-
-            (SI_TS, SI_fitparam_values, SI_status) = future_analysis.unblind(new_rss)
-
-            ts_vals.append(SI_TS)
-            ns_vals.append(SI_fitparam_values['ns'])
-            gamma_vals.append(SI_fitparam_values['gamma'])
-
-        ts_exp = np.mean(ts_vals)
-
-        return (SI_TS, ts_exp)
-
+    # Store metadata for generation of results
     with pd.HDFStore('SI_analysis.h5') as hdf_store:
 
         metadata = pd.Series(data = {'l10m_min': m_md[0],
@@ -279,33 +183,11 @@ if __name__ == "__main__":
                                      'seed': args.seed}) 
         hdf_store.put('metadata', metadata)
 
-        #perform_SI_analysis(NGCsource, 
-        #                    "NGC", 
-        #                    datasets, 
-        #                    distance_NGC,
-        #                    M, 
-        #                    G,
-        #                    neutrino_masses_GeV,
-        #                    relic_density_cm_3,
-        #                    hdf_store, 
-        #                    args, 
-        #                    cfg)
-
-#def perform_SI_analysis(
-#        source, 
-#        source_name, 
-#        datasets,
-#        distance_Mpc,
-#        M, 
-#        G, 
-#        neutrino_masses_GeV,
-#        relic_density_cm_3,
-#        hdf_store, 
-#        args,
-#        cfg):
-
-
-        source = NGCsource
+############################### NGC ################################
+        alpha_NGC = 40.667
+        dec_NGC = -0.0069
+        NGCsource = PointLikeSource(ra=np.deg2rad(alpha_NGC), dec=np.deg2rad(dec_NGC))
+        distance_NGC = 14 #Mpc
         source_name = "NGC"
 
         pl_analysis, pl_fitparam_values, pl_ts_current, pl_ts_exp = perform_pl_analysis(NGCsource, 
@@ -315,18 +197,55 @@ if __name__ == "__main__":
 
         n_s = pl_fitparam_values['ns']
 
+        def model_NGC_TS(index):
+
+            m_phi_GeV = M[index]
+            g = G[index]
+
+            si_analysis = create_si_analysis(cfg=cfg, datasets=datasets, source=NGCsource,
+                                               distance_Mpc = distance_NGC,
+                                               g = g,
+                                               m_phi_GeV = m_phi_GeV,
+                                               neutrino_masses_GeV = neutrino_masses_GeV,
+                                               relic_density_cm_3 = relic_density_cm_3,
+                                               steps = 20,
+                                               )
+
+            new_events_list = [data.exp for data in si_analysis.data_list]
+            si_analysis.initialize_trial(new_events_list)
+
+            new_rss = RandomStateService(seed=args.seed)
+
+            ts_vals = []
+            gamma_vals = []
+            ns_vals = []
+
+            for i in range(args.n_iter):
+
+                future_analysis = deepcopy(si_analysis)
+                data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
+                add_datasets(future_analysis, data_list)
+
+                (SI_TS, SI_fitparam_values, SI_status) = future_analysis.unblind(new_rss)
+
+                ts_vals.append(SI_TS)
+                ns_vals.append(SI_fitparam_values['ns'])
+                gamma_vals.append(SI_fitparam_values['gamma'])
+
+            ts_exp = np.mean(ts_vals)
+
+            (SI_TS, SI_fitparam_values, SI_status) = si_analysis.unblind(new_rss)
+
+            return (SI_TS, ts_exp)
+
         start = time.perf_counter()
 
         with Pool(args.n_cpus) as p:
 
-            si_TS_list = p.map(partial(model_TS, 
-                                           n_s=n_s), 
-                                   range(M.size))
+            si_TS_list = p.map(model_NGC_TS, range(M.size))
 
         end = time.perf_counter()
         print("Time taken = " + str(end - start) + " s")
-
-        print(si_TS_list)
 
         result_df = pd.DataFrame(data={"m_phi": M, 
                                        "g":G, 
@@ -334,14 +253,160 @@ if __name__ == "__main__":
                                                     - np.array(si_TS_list)[:,0])})
         future_df = pd.DataFrame(data={"m_phi": M, 
                                        "g":G, 
-                                       "-2 logllh":(pl_ts_current 
+                                       "-2 logllh":(pl_ts_exp 
                                                     - np.array(si_TS_list)[:,1])})
 
         hdf_store.put(source_name, result_df)
         hdf_store.put(source_name+str("_future"), future_df)
 
-        #perform_SI_analysis(PKSsource, "PKS", PKS_partial, M, G, 
-        #                    hdf_store, args, cfg)
+############################### PKS ################################
 
-        #perform_SI_analysis(TXSsource, "TXS", TSX_partial, M, G,
-        #                    hdf_store, args, cfg)
+        alpha_PKS = 216.76
+        dec_PKS = 23.8
+        PKSsource = PointLikeSource(ra=np.deg2rad(alpha_PKS), dec=np.deg2rad(dec_PKS))
+        z_PKS = 0.6
+        source_name = "PKS"
+
+        pl_analysis, pl_fitparam_values, pl_ts_current, pl_ts_exp = perform_pl_analysis(PKSsource, 
+                                                                    datasets, 
+                                                                    args, 
+                                                                    cfg)
+        n_s = pl_fitparam_values['ns']
+
+        def model_PKS_TS(index):
+
+            m_phi_GeV = M[index]
+            g = G[index]
+
+            si_analysis = create_si_z_analysis(cfg=cfg, datasets=datasets, source=PKSsource,
+                                               z = z_PKS,
+                                               g = g,
+                                               m_phi_GeV = m_phi_GeV,
+                                               neutrino_masses_GeV = neutrino_masses_GeV,
+                                               relic_density_cm_3 = relic_density_cm_3,
+                                               )
+
+            new_events_list = [data.exp for data in si_analysis.data_list]
+            si_analysis.initialize_trial(new_events_list)
+
+            new_rss = RandomStateService(seed=args.seed)
+
+            ts_vals = []
+            gamma_vals = []
+            ns_vals = []
+
+            for i in range(args.n_iter):
+
+                future_analysis = deepcopy(si_analysis)
+                data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
+                add_datasets(future_analysis, data_list)
+
+                (SI_TS, SI_fitparam_values, SI_status) = future_analysis.unblind(new_rss)
+
+                ts_vals.append(SI_TS)
+                ns_vals.append(SI_fitparam_values['ns'])
+                gamma_vals.append(SI_fitparam_values['gamma'])
+
+            ts_exp = np.mean(ts_vals)
+
+            (SI_TS, SI_fitparam_values, SI_status) = si_analysis.unblind(new_rss)
+
+            return (SI_TS, ts_exp)
+
+
+        start = time.perf_counter()
+
+        with Pool(args.n_cpus) as p:
+
+            si_TS_list = p.map(model_PKS_TS, range(M.size))
+
+        end = time.perf_counter()
+        print("Time taken = " + str(end - start) + " s")
+
+        result_df = pd.DataFrame(data={"m_phi": M, 
+                                       "g":G, 
+                                       "-2 logllh":(pl_ts_current
+                                                    - np.array(si_TS_list)[:,0])})
+        future_df = pd.DataFrame(data={"m_phi": M, 
+                                       "g":G, 
+                                       "-2 logllh":(pl_ts_exp 
+                                                    - np.array(si_TS_list)[:,1])})
+
+        hdf_store.put(source_name, result_df)
+        hdf_store.put(source_name+str("_future"), future_df)
+
+############################### TXS ################################
+
+        alpha_TXS = 77.3582
+        dec_TXS = 5.69314
+        TXSsource = PointLikeSource(ra=np.deg2rad(alpha_TXS), dec=np.deg2rad(dec_TXS))
+        z_TXS = 0.45
+        source_name = "TXS"
+
+        pl_analysis, pl_fitparam_values, pl_ts_current, pl_ts_exp = perform_pl_analysis(TXSsource, 
+                                                                    datasets, 
+                                                                    args, 
+                                                                    cfg)
+        n_s = pl_fitparam_values['ns']
+
+        def model_TXS_TS(index):
+
+            m_phi_GeV = M[index]
+            g = G[index]
+
+            si_analysis = create_si_z_analysis(cfg=cfg, datasets=datasets, source=TXSsource,
+                                               z = z_TXS,
+                                               g = g,
+                                               m_phi_GeV = m_phi_GeV,
+                                               neutrino_masses_GeV = neutrino_masses_GeV,
+                                               relic_density_cm_3 = relic_density_cm_3,
+                                               )
+
+            new_events_list = [data.exp for data in si_analysis.data_list]
+            si_analysis.initialize_trial(new_events_list)
+
+            new_rss = RandomStateService(seed=args.seed)
+
+            ts_vals = []
+            gamma_vals = []
+            ns_vals = []
+
+            for i in range(args.n_iter):
+
+                future_analysis = deepcopy(si_analysis)
+                data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
+                add_datasets(future_analysis, data_list)
+
+                (SI_TS, SI_fitparam_values, SI_status) = future_analysis.unblind(new_rss)
+
+                ts_vals.append(SI_TS)
+                ns_vals.append(SI_fitparam_values['ns'])
+                gamma_vals.append(SI_fitparam_values['gamma'])
+
+            ts_exp = np.mean(ts_vals)
+
+            (SI_TS, SI_fitparam_values, SI_status) = si_analysis.unblind(new_rss)
+
+            return (SI_TS, ts_exp)
+
+
+        start = time.perf_counter()
+
+        with Pool(args.n_cpus) as p:
+
+            si_TS_list = p.map(model_TXS_TS, range(M.size))
+
+        end = time.perf_counter()
+        print("Time taken = " + str(end - start) + " s")
+
+        result_df = pd.DataFrame(data={"m_phi": M, 
+                                       "g":G, 
+                                       "-2 logllh":(pl_ts_current
+                                                    - np.array(si_TS_list)[:,0])})
+        future_df = pd.DataFrame(data={"m_phi": M, 
+                                       "g":G, 
+                                       "-2 logllh":(pl_ts_exp 
+                                                    - np.array(si_TS_list)[:,1])})
+
+        hdf_store.put(source_name, result_df)
+        hdf_store.put(source_name+str("_future"), future_df)
