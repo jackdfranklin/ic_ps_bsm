@@ -202,7 +202,7 @@ class ScatteredPLFluxProfile(
 
     @property
     def math_function_str(self):
-        return f'Solution to transport PDE for g = {self._g}, Mphi {self._m_phi_GeV*1e3} MeV'
+        return f'Solution to transport PDE'
 
     def solve_for_flux(self, gamma_grid):
 
