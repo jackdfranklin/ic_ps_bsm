@@ -10,6 +10,7 @@ __pycache__/
 .Python
 build/
 build-dbg/
+subprojects/
 develop-eggs/
 dist/
 downloads/
@@ -87,3 +88,4 @@ datasets/
 *.csv
 *.txt
 *.pkl
+results/

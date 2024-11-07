@@ -40,6 +40,10 @@ def parse_arguments():
                         help="Number of iterations of the future \
                                         analysis to perform")
 
+    parser.add_argument("--n_gen", type=int, default=2, 
+                        help="Number of 5 year seasons of pseudo-data\
+                                to use in sensitivity analysis")
+
     return parser.parse_args()
 
 
@@ -115,7 +119,7 @@ def perform_pl_analysis(source, dataset_collection, args, cfg):
                                   source=source, 
                                   energy_profile=pl_profile)
 
-    n_gen = pl_fitparam_values['ns']
+    n_s = pl_fitparam_values['ns']
 
     ts_vals = []
     gamma_vals = []
@@ -124,7 +128,8 @@ def perform_pl_analysis(source, dataset_collection, args, cfg):
     for i in range(args.n_iter):
 
         future_analysis = deepcopy(pl_analysis)
-        data_list = gen_n_new_datasets(future_analysis, n_gen, 2, rss)
+        data_list = gen_n_new_datasets(future_analysis, n_s, args.n_gen, rss)
+        print(data_list)
         add_datasets(future_analysis, data_list)
 
         (NGC_TS, NGC_fitparam_values, NGC_status) = future_analysis.unblind(rss)
@@ -172,7 +177,7 @@ if __name__ == "__main__":
 
 
     # Store metadata for generation of results
-    with pd.HDFStore('SI_analysis.h5') as hdf_store:
+    with pd.HDFStore(args.out_dir+'/SI_analysis.h5') as hdf_store:
 
         metadata = pd.Series(data = {'l10m_min': m_md[0],
                                      'l10m_max': m_md[1],
@@ -223,7 +228,7 @@ if __name__ == "__main__":
             for i in range(args.n_iter):
 
                 future_analysis = deepcopy(si_analysis)
-                data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
+                data_list = gen_n_new_datasets(pl_analysis, n_s, args.n_gen, new_rss)
                 add_datasets(future_analysis, data_list)
 
                 (SI_TS, SI_fitparam_values, SI_status) = future_analysis.unblind(new_rss)
@@ -298,7 +303,7 @@ if __name__ == "__main__":
             for i in range(args.n_iter):
 
                 future_analysis = deepcopy(si_analysis)
-                data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
+                data_list = gen_n_new_datasets(pl_analysis, n_s, args.n_gen, new_rss)
                 add_datasets(future_analysis, data_list)
 
                 (SI_TS, SI_fitparam_values, SI_status) = future_analysis.unblind(new_rss)
@@ -374,7 +379,7 @@ if __name__ == "__main__":
             for i in range(args.n_iter):
 
                 future_analysis = deepcopy(si_analysis)
-                data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
+                data_list = gen_n_new_datasets(pl_analysis, n_s, args.n_gen, new_rss)
                 add_datasets(future_analysis, data_list)
 
                 (SI_TS, SI_fitparam_values, SI_status) = future_analysis.unblind(new_rss)

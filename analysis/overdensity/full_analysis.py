@@ -152,10 +152,10 @@ if __name__ == "__main__":
 
     relic_density_cm_3 = 56
 
-    m_md = (-3, 0, 2)
+    m_md = (-3, 0, 20)
     m1_vals = np.logspace(m_md[0], m_md[1], m_md[2])
 
-    r_md = (8, 15, 2)
+    r_md = (8, 15, 20)
     relic_dens_vals = 56*np.logspace(r_md[0], r_md[1], r_md[2])
 
     M, R = np.meshgrid(m1_vals, relic_dens_vals)
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     R = R.flatten()
 
     # Store metadata for generation of results
-    with pd.HDFStore('results/SM_analysis.h5') as hdf_store:
+    with pd.HDFStore(args.out_dir+'SM_analysis.h5') as hdf_store:
 
         metadata = pd.Series(data = {'l10m_min': m_md[0],
                                      'l10m_max': m_md[1],
