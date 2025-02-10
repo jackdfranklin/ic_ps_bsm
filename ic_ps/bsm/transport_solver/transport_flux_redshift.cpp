@@ -10,6 +10,7 @@
 
 void apply_redshift(const Eigen::VectorXd &E_GeV, Eigen::VectorXd &flux, 
                     double z_0, double z_1) {
+    // Apply redshift transformation from z_0 to z_1
 
     double deltalog10E = std::log10(E_GeV.head(2)(1)) 
                         - std::log10(E_GeV.head(1)(0));
@@ -58,7 +59,7 @@ void apply_redshift(const Eigen::VectorXd &E_GeV, Eigen::VectorXd &flux,
 
         }
 
-        flux(m) = redshifted_flux;
+        flux(m) = std::pow((1.0 + z_0)/(1.0 + z_1), -3) * redshifted_flux;
 
     }
 
@@ -111,7 +112,10 @@ void solve_transport_eqn_z(
             z = zs.at(s);
             delta_z = zs.at( s - 1 ) - z;
             for ( mass_state i: {one, two, three} ) {
+                // Shift energy of neutrinos due to redshift
                 shift_bins(energy_nodes, fluxes.at(i));
+                // Decrease flux due to expansion of Universe
+                fluxes.at(i) *= std::pow(1.0 + delta_z/(1.0 + z), -3);
             }
         }
 
