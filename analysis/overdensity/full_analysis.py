@@ -39,6 +39,9 @@ def parse_arguments():
     parser.add_argument("--n_iter", type=int, default=1000, 
                         help="Number of iterations of the future \
                                         analysis to perform")
+    parser.add_argument("--n_gen", type=int, default=2, 
+                        help="Number of 5 year datasets to generate\
+                                        for future analysis")
 
     return parser.parse_args()
 
@@ -115,7 +118,9 @@ def perform_pl_analysis(source, dataset_collection, args, cfg):
                                   source=source, 
                                   energy_profile=pl_profile)
 
-    n_gen = pl_fitparam_values['ns']
+    n_s = pl_fitparam_values['ns']
+
+    new_rss = RandomStateService(seed=args.seed)
 
     ts_vals = []
     gamma_vals = []
@@ -124,16 +129,18 @@ def perform_pl_analysis(source, dataset_collection, args, cfg):
     for i in range(args.n_iter):
 
         future_analysis = deepcopy(pl_analysis)
-        data_list = gen_n_new_datasets(future_analysis, n_gen, 2, rss)
+        data_list = gen_n_new_datasets(future_analysis, n_s, args.n_gen, new_rss)
         add_datasets(future_analysis, data_list)
 
-        (NGC_TS, NGC_fitparam_values, NGC_status) = future_analysis.unblind(rss)
+        (NGC_TS, NGC_fitparam_values, NGC_status) = future_analysis.unblind(new_rss)
 
         ts_vals.append(NGC_TS)
         ns_vals.append(NGC_fitparam_values['ns'])
         gamma_vals.append(NGC_fitparam_values['gamma'])
 
     ts_exp = np.mean(ts_vals)
+
+    print(f'80 years PL TS = {ts_exp}')
 
     return (pl_analysis, pl_fitparam_values, pl_TS, ts_exp)
 
@@ -152,10 +159,10 @@ if __name__ == "__main__":
 
     relic_density_cm_3 = 56
 
-    m_md = (-3, 0, 20)
+    m_md = (-3, 0, 8)
     m1_vals = np.logspace(m_md[0], m_md[1], m_md[2])
 
-    r_md = (8, 15, 20)
+    r_md = (6, 15, 8)
     relic_dens_vals = 56*np.logspace(r_md[0], r_md[1], r_md[2])
 
     M, R = np.meshgrid(m1_vals, relic_dens_vals)
@@ -164,7 +171,7 @@ if __name__ == "__main__":
     R = R.flatten()
 
     # Store metadata for generation of results
-    with pd.HDFStore(args.out_dir+'SM_analysis.h5') as hdf_store:
+    with pd.HDFStore(args.out_dir+'/SM_analysis_full.h5') as hdf_store:
 
         metadata = pd.Series(data = {'l10m_min': m_md[0],
                                      'l10m_max': m_md[1],
@@ -219,7 +226,7 @@ if __name__ == "__main__":
             for i in range(args.n_iter):
 
                 future_analysis = deepcopy(sm_analysis)
-                data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
+                data_list = gen_n_new_datasets(pl_analysis, n_s, args.n_gen, new_rss)
                 add_datasets(future_analysis, data_list)
 
                 (SM_TS, SM_fitparam_values, SM_status) = future_analysis.unblind(new_rss)
@@ -298,7 +305,7 @@ if __name__ == "__main__":
             for i in range(args.n_iter):
 
                 future_analysis = deepcopy(sm_analysis)
-                data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
+                data_list = gen_n_new_datasets(pl_analysis, n_s, args.n_gen, new_rss)
                 add_datasets(future_analysis, data_list)
 
                 (SM_TS, SM_fitparam_values, SM_status) = future_analysis.unblind(new_rss)
@@ -378,7 +385,7 @@ if __name__ == "__main__":
             for i in range(args.n_iter):
 
                 future_analysis = deepcopy(sm_analysis)
-                data_list = gen_n_new_datasets(pl_analysis, n_s, 2, new_rss)
+                data_list = gen_n_new_datasets(pl_analysis, n_s, args.n_gen, new_rss)
                 add_datasets(future_analysis, data_list)
 
                 (SM_TS, SM_fitparam_values, SM_status) = future_analysis.unblind(new_rss)
