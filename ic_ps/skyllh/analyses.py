@@ -1,6 +1,6 @@
-"""The time_integrated_ps analysis is a multi-dataset time-integrated single
-source analysis with a two-component likelihood function using a spacial and an
-energy event PDF.
+"""
+Modified version taken from https://github.com/icecube/skyllh/analyses/i3/publicdata_ps/
+Analysis builders for SI and NSI neutrino scenarios
 """
 
 import numpy as np
